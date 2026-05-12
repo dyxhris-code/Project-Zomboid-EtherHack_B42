@@ -24,7 +24,7 @@ import zombie.core.textures.Texture;
 import zombie.inventory.InventoryItem;
 import zombie.network.GameClient;
 import zombie.network.PacketTypes;
-import zombie.network.packets.PlayerPacket;
+import zombie.network.packets.character.PlayerPacket;
 import zombie.scripting.ScriptManager;
 import zombie.scripting.objects.Recipe;
 
@@ -212,10 +212,10 @@ public class EtherLuaMethods {
          EtherMain.getInstance().etherAPI.isPlayerInSafeTeleported = true;
          IsoPlayer player = IsoPlayer.getInstance();
 
-         float z = player.z;
-         float dx = x - player.x;
-         float dy = y - player.y;
-         float dz = z - player.z;
+         float z = player.getZ();
+         float dx = x - player.getX();
+         float dy = y - player.getY();
+         float dz = z - player.getZ();
 
          float absDx = Math.abs(dx);
          float absDy = Math.abs(dy);
@@ -235,20 +235,18 @@ public class EtherLuaMethods {
             if (dy < 0) stepY = -stepY;
             if (dz < 0) stepZ = -stepZ;
 
-            player.setX(player.x + stepX);
-            player.setY(player.y + stepY);
-            player.setZ(player.z + stepZ);
-            player.setLx(player.getX());
-            player.setLy(player.getY());
-            player.setLz(player.getZ());
+            player.setX(player.getX() + stepX);
+            player.setY(player.getY() + stepY);
+            player.setZ(player.getZ() + stepZ);
 
             GameClient.instance.sendPlayer(player);
 
-            if (GameClient.connection != null &&
-                    PlayerPacket.l_send.playerPacket.set(player)) {
+            if (GameClient.connection != null) {
+               PlayerPacket playerPacket = new PlayerPacket();
+               playerPacket.set(player);
                ByteBufferWriter writer = GameClient.connection.startPacket();
                PacketTypes.PacketType.PlayerUpdateReliable.doPacket(writer);
-               PlayerPacket.l_send.playerPacket.write(writer);
+               playerPacket.write(writer);
                PacketTypes.PacketType.PlayerUpdateReliable.send(GameClient.connection);
             }
          }

@@ -38,6 +38,14 @@ public class Patch {
    }
 
    public static void injectIntoClass(String className, String methodName, boolean isStatic, Consumer<MethodNode> injector) {
+      injectIntoClass(className, methodName, isStatic, false, injector);
+   }
+
+   public static void injectIntoClassIfPresent(String className, String methodName, boolean isStatic, Consumer<MethodNode> injector) {
+      injectIntoClass(className, methodName, isStatic, true, injector);
+   }
+
+   private static void injectIntoClass(String className, String methodName, boolean isStatic, boolean optional, Consumer<MethodNode> injector) {
       Logger.print("Injection into a game file '" + className + "' in method: '" + methodName + "'");
 
       ClassNode classNode = classNodeMap.computeIfAbsent(className, key -> {
@@ -56,12 +64,24 @@ public class Patch {
          throw new RuntimeException("Failed to load class " + className);
       }
 
+      boolean injected = false;
       for (MethodNode methodNode : classNode.methods) {
          if (methodNode.name.equals(methodName) && Modifier.isStatic(methodNode.access) == isStatic) {
             if (!hasInjectedAnnotation(methodNode)) {
                addInjectAnnotation(classNode, methodName);
             }
             injector.accept(methodNode);
+            injected = true;
+         }
+      }
+
+      if (!injected) {
+         String message = "Could not find " + (isStatic ? "static" : "instance")
+                 + " method '" + methodName + "' in '" + className + "'";
+         if (optional) {
+            Logger.print(message + ". Skipping optional injection.");
+         } else {
+            throw new IllegalStateException(message);
          }
       }
 

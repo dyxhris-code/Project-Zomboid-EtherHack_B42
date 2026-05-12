@@ -251,7 +251,7 @@ public class GamePatcher {
     * Внедрение в файлы игровых предметов
     */
    public void patchItemContainer() {
-      Patch.injectIntoClass("zombie/inventory/ItemContainer", "getWeight", false, (method) -> {
+      Patch.injectIntoClassIfPresent("zombie/inventory/ItemContainer", "getWeight", false, (method) -> {
          InsnList newInstructions = new InsnList();
          LabelNode carryOnLabel = new LabelNode();
          newInstructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "EtherHack/Ether/EtherMain", "getInstance", "()LEtherHack/Ether/EtherMain;", false));

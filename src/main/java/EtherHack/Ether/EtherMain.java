@@ -32,11 +32,11 @@ public class EtherMain {
       Logger.printLog("Initializing EtherHack...");
       this.etherTranslator = new EtherTranslator();
       this.etherTranslator.loadTranslations();
-      this.etherCredits = new EtherCredits();
       this.etherAPI = new EtherAPI();
       this.etherAPI.loadAPI();
       this.etherLuaManager = new EtherLuaManager();
       this.etherLuaManager.loadLua();
+      this.etherCredits = new EtherCredits();
       Logger.printLog("Initialization EtherHack was completed!");
    }
 

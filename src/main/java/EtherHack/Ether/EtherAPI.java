@@ -26,8 +26,10 @@ import se.krka.kahlua.vm.Platform;
 import zombie.SandboxOptions;
 import zombie.Lua.LuaManager;
 import zombie.characterTextures.BloodBodyPartType;
+import zombie.characters.CharacterStat;
 import zombie.characters.IsoPlayer;
 import zombie.characters.IsoZombie;
+import zombie.characters.Stats;
 import zombie.core.Color;
 import zombie.core.Core;
 import zombie.core.textures.Texture;
@@ -406,7 +408,7 @@ public class EtherAPI {
                   var5.setMaxRange(var7[3]);
                   var5.setMinRange(var7[4]);
                   var5.setHitChance((int)var7[5]);
-                  var5.setCritDmgMultiplier(var7[6]);
+                  var5.setCriticalDamageMultiplier(var7[6]);
                }
             }
          }
@@ -422,7 +424,7 @@ public class EtherAPI {
             var3 = (HandWeapon)var2;
             String var4 = var3.getFullType();
             if (!this.originalWeaponStats.containsKey(var4)) {
-               this.originalWeaponStats.put(var4, new float[]{var3.getExtraDamage(), var3.getMaxDamage(), var3.getMinDamage(), var3.getMaxRange(), var3.getMinRange(), (float)var3.getHitChance(), var3.getCritDmgMultiplier()});
+               this.originalWeaponStats.put(var4, new float[]{var3.getExtraDamage(), var3.getMaxDamage(), var3.getMinDamage(), var3.getMaxRange(), var3.getMinRange(), (float)var3.getHitChance(), var3.getCriticalDamageMultiplier()});
             }
 
             var3.setExtraDamage(100000.0F);
@@ -431,7 +433,7 @@ public class EtherAPI {
             var3.setMaxRange(10000.0F);
             var3.setMinRange(0.0F);
             var3.setHitChance(100);
-            var3.setCritDmgMultiplier(100000.0F);
+            var3.setCriticalDamageMultiplier(100000.0F);
          }
 
          if ((Boolean)SandboxOptions.instance.getOptionByName("MultiHitZombies").asConfigOption().getValueAsObject() != this.isMultiHitZombies) {
@@ -519,79 +521,80 @@ public class EtherAPI {
          }
 
          if (this.isUnlimitedEndurance) {
-            var1.getStats().setEndurance(1.0F);
+            setCharacterStat(var1, CharacterStat.ENDURANCE, 1.0F);
          }
 
          if (this.isDisableFatigue) {
-            var1.getStats().setFatigue(0.0F);
+            setCharacterStat(var1, CharacterStat.FATIGUE, 0.0F);
          }
 
          if (this.isDisableHunger) {
-            var1.getStats().setHunger(0.0F);
+            setCharacterStat(var1, CharacterStat.HUNGER, 0.0F);
          }
 
          if (this.isDisableThirst) {
-            var1.getStats().setThirst(0.0F);
+            setCharacterStat(var1, CharacterStat.THIRST, 0.0F);
          }
 
          if (this.isDisableDrunkenness) {
-            var1.getStats().setDrunkenness(0.0F);
+            setCharacterStat(var1, CharacterStat.INTOXICATION, 0.0F);
          }
 
          if (this.isDisableAnger) {
-            var1.getStats().setAnger(0.0F);
+            setCharacterStat(var1, CharacterStat.ANGER, 0.0F);
          }
 
          if (this.isDisableFear) {
-            var1.getStats().setFear(0.0F);
+            setCharacterStat(var1, CharacterStat.PANIC, 0.0F);
          }
 
          if (this.isDisablePain) {
-            var1.getStats().setPain(0.0F);
+            setCharacterStat(var1, CharacterStat.PAIN, 0.0F);
          }
 
          if (this.isDisablePanic) {
-            var1.getStats().setPanic(0.0F);
+            setCharacterStat(var1, CharacterStat.PANIC, 0.0F);
          }
 
          if (this.isDisableMorale) {
-            var1.getStats().setMorale(1.0F);
+            setCharacterStat(var1, CharacterStat.MORALE, 1.0F);
          }
 
          if (this.isDisableStress) {
-            var1.getStats().setStress(0.0F);
+            setCharacterStat(var1, CharacterStat.STRESS, 0.0F);
          }
 
          if (this.isDisableSickness) {
-            var1.getStats().setSickness(0.0F);
+            setCharacterStat(var1, CharacterStat.SICKNESS, 0.0F);
          }
 
          if (this.isDisableStressFromCigarettes) {
-            var1.getStats().setStressFromCigarettes(0.0F);
+            setCharacterStat(var1, CharacterStat.NICOTINE_WITHDRAWAL, 0.0F);
          }
 
          if (this.isDisableSanity) {
-            var1.getStats().setSanity(1.0F);
+            setCharacterStat(var1, CharacterStat.SANITY, 1.0F);
          }
 
          if (this.isDisableBoredomLevel) {
-            var1.getBodyDamage().setBoredomLevel(0.0F);
+            setCharacterStat(var1, CharacterStat.BOREDOM, 0.0F);
          }
 
          if (this.isDisableUnhappynessLevel) {
-            var1.getBodyDamage().setUnhappynessLevel(0.0F);
+            setCharacterStat(var1, CharacterStat.UNHAPPINESS, 0.0F);
          }
 
          if (this.isDisableWetness) {
-            var1.getBodyDamage().setWetness(0.0F);
+            setCharacterStat(var1, CharacterStat.WETNESS, 0.0F);
          }
 
          if (this.isDisableInfectionLevel) {
-            var1.getBodyDamage().setInfectionLevel(0.0F);
+            setCharacterStat(var1, CharacterStat.ZOMBIE_INFECTION, 0.0F);
          }
 
          if (this.isDisableFakeInfectionLevel) {
-            var1.getBodyDamage().setFakeInfectionLevel(0.0F);
+            var1.getBodyDamage().setIsFakeInfected(false);
+            var1.getBodyDamage().setReduceFakeInfection(true);
          }
 
          if (this.isOptimalCalories) {
@@ -622,7 +625,7 @@ public class EtherAPI {
 
    public void updateUltraPlayerVision() {
       if (this.isVisualEnable360Vision) {
-         ArrayList var1 = IsoWorld.instance.getCell().getVehicles();
+         Collection<BaseVehicle> var1 = IsoWorld.instance.getCell().getVehicles();
          if (var1 != null && !var1.isEmpty()) {
             Iterator var2 = var1.iterator();
 
@@ -661,14 +664,14 @@ public class EtherAPI {
       if (this.isVisualsEnable && this.isVisualsVehiclesEnable) {
          IsoPlayer var1 = IsoPlayer.getInstance();
          if (var1 != null) {
-            ArrayList var2 = IsoWorld.instance.getCell().getVehicles();
+            Collection<BaseVehicle> var2 = IsoWorld.instance.getCell().getVehicles();
             float var3 = PlayerUtils.getScreenPositionX(var1);
             float var4 = PlayerUtils.getScreenPositionY(var1);
             float var5 = this.vehiclesUIColor.a;
             float var6 = this.vehiclesUIColor.r;
             float var7 = this.vehiclesUIColor.g;
             float var8 = this.vehiclesUIColor.b;
-            if (var2 != null || !var2.isEmpty()) {
+            if (var2 != null && !var2.isEmpty()) {
                Iterator var9 = var2.iterator();
 
                while(var9.hasNext()) {
@@ -703,7 +706,7 @@ public class EtherAPI {
             float var4 = this.zombiesUIColor.r;
             float var5 = this.zombiesUIColor.g;
             float var6 = this.zombiesUIColor.b;
-            if (var2 != null || !var2.isEmpty()) {
+            if (var2 != null && !var2.isEmpty()) {
                Iterator var7 = var2.iterator();
 
                while(var7.hasNext()) {
@@ -731,7 +734,7 @@ public class EtherAPI {
             float var6 = this.playersUIColor.r;
             float var7 = this.playersUIColor.g;
             float var8 = this.playersUIColor.b;
-            if (var2 != null || !var2.isEmpty()) {
+            if (var2 != null && !var2.isEmpty()) {
                Iterator var9 = var2.iterator();
 
                while(true) {
@@ -780,6 +783,13 @@ public class EtherAPI {
          updateLocalPlayerFeatures();
       } catch (Exception e) {
          Logger.printLog("Error in updateAPI: " + e.getMessage());
+      }
+   }
+
+   private void setCharacterStat(IsoPlayer player, CharacterStat stat, float value) {
+      Stats stats = player.getStats();
+      if (stats != null) {
+         stats.set(stat, value);
       }
    }
 }

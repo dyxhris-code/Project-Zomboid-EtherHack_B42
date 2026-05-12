@@ -12,12 +12,13 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Project%20Zomboid-Build%2042-2f6f4e" alt="Project Zomboid Build 42">
-  <img src="https://img.shields.io/badge/Java-17-437291" alt="Java 17">
+  <img src="https://img.shields.io/badge/Java-25-437291" alt="Java 25">
   <img src="https://img.shields.io/badge/Gradle-Kotlin%20DSL-02303a" alt="Gradle Kotlin DSL">
   <img src="https://img.shields.io/github/license/ljy87263621/Project-Zomboid-EtherHack" alt="License">
 </p>
 
 This repository is a Project Zomboid Build 42 compatibility fork of EtherHack.
+The current adaptation targets Project Zomboid Build 42.18.0.
 It is maintained for local debugging, mod development, and server-authorized
 administration on worlds or servers you own or administer.
 
@@ -65,11 +66,15 @@ demo/                           Screenshots and logo assets
 Build locally with:
 
 ```powershell
+Copy-Item "D:\Apps\Steam\steamapps\common\ProjectZomboid\projectzomboid.jar" lib\zombie.jar
+$env:JAVA_HOME = "C:\Path\To\jdk-25"
 .\gradlew.bat clean build
 ```
 
-The build expects local Project Zomboid jars in `lib/`. They are ignored because
-they come from a local game installation and may not be redistributable.
+The build expects local Project Zomboid jars in `lib/`. Project Zomboid
+42.18.0 ships Java 25 bytecode, so use a Java 25 JDK for compilation. The
+game-bundled `jre64` is a runtime and does not include `javac`; install a Java
+25 JDK or let Gradle provision one through the toolchain resolver.
 
 ## Screenshots
 
