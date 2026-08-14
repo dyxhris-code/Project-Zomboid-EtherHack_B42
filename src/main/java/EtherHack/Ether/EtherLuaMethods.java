@@ -21,15 +21,12 @@ import zombie.core.textures.Texture;
 import zombie.inventory.InventoryItem;
 import zombie.network.GameClient;
 import zombie.network.PacketTypes;
-import zombie.network.ServerOptions;
-import zombie.network.packets.PlayerPacket;
+import zombie.network.packets.character.PlayerPacket;
 import zombie.scripting.ScriptManager;
 import zombie.scripting.objects.Recipe;
 
 public class EtherLuaMethods {
    private static EtherLuaMethods instance = null;
-   private final SafeAPI safeAPI = SafeAPI.getInstance();
-   private static final Map<String, Object> methodCache = new HashMap<>();
    @LuaMethod(
       name = "getZombieUIColor",
       global = true
@@ -156,15 +153,17 @@ public class EtherLuaMethods {
 
    @LuaMethod(name = "safePlayerTeleport", global = true)
    public static void safePlayerTeleport(int x, int y) {
-      String key = SafeAPI.getInstance().generateVerificationKey();
       try {
          EtherMain.getInstance().etherAPI.isPlayerInSafeTeleported = true;
          IsoPlayer player = IsoPlayer.getInstance();
+         if (player == null) {
+            return;
+         }
 
-         float z = player.z;
-         float dx = x - player.x;
-         float dy = y - player.y;
-         float dz = z - player.z;
+         float z = player.getZ();
+         float dx = x - player.getX();
+         float dy = y - player.getY();
+         float dz = z - player.getZ();
 
          float absDx = Math.abs(dx);
          float absDy = Math.abs(dy);
@@ -184,21 +183,22 @@ public class EtherLuaMethods {
             if (dy < 0) stepY = -stepY;
             if (dz < 0) stepZ = -stepZ;
 
-            player.setX(player.x + stepX);
-            player.setY(player.y + stepY);
-            player.setZ(player.z + stepZ);
-            player.setLx(player.getX());
-            player.setLy(player.getY());
-            player.setLz(player.getZ());
+            player.setX(player.getX() + stepX);
+            player.setY(player.getY() + stepY);
+            player.setZ(player.getZ() + stepZ);
+            player.setLastX(player.getX());
+            player.setLastY(player.getY());
+            player.setLastZ(player.getZ());
 
             GameClient.instance.sendPlayer(player);
 
-            if (GameClient.connection != null &&
-                    PlayerPacket.l_send.playerPacket.set(player)) {
+            if (GameClient.connection != null) {
+               PlayerPacket playerPacket = new PlayerPacket();
+               PacketTypes.PacketType packetType = playerPacket.set(player);
                ByteBufferWriter writer = GameClient.connection.startPacket();
-               PacketTypes.PacketType.PlayerUpdateReliable.doPacket(writer);
-               PlayerPacket.l_send.playerPacket.write(writer);
-               PacketTypes.PacketType.PlayerUpdateReliable.send(GameClient.connection);
+               packetType.doPacket(writer);
+               playerPacket.write(writer);
+               packetType.send(GameClient.connection);
             }
          }
 
@@ -217,7 +217,6 @@ public class EtherLuaMethods {
    // Recipe and item manipulation
    @LuaMethod(name = "learnAllRecipes", global = true)
    public static void learnAllRecipes() {
-      String key = SafeAPI.getInstance().generateVerificationKey();
       try {
          IsoPlayer player = IsoPlayer.getInstance();
          if (player != null) {
@@ -237,7 +236,6 @@ public class EtherLuaMethods {
 
    @LuaMethod(name = "giveItem", global = true)
    public static void giveItem(InventoryItem item, int count) {
-      String key = SafeAPI.getInstance().generateVerificationKey();
       try {
          IsoPlayer player = IsoPlayer.getInstance();
          if (player != null) {
@@ -745,22 +743,6 @@ public class EtherLuaMethods {
    }
 
    @LuaMethod(
-      name = "isBypassDebugMode",
-      global = true
-   )
-   public static boolean isBypassDebugMode() {
-      return EtherMain.getInstance().etherAPI.isBypassDebugMode;
-   }
-
-   @LuaMethod(
-      name = "toggleBypassDebugMode",
-      global = true
-   )
-   public static void toggleBypassDebugMode(boolean var0) {
-      EtherMain.getInstance().etherAPI.isBypassDebugMode = var0;
-   }
-
-   @LuaMethod(
       name = "toggleUnlimitedEndurance",
       global = true
    )
@@ -1095,24 +1077,8 @@ public class EtherLuaMethods {
       return EtherMain.getInstance().etherAPI.isUnlimitedCarry;
    }
 
-   @LuaMethod(name = "getAntiCheat12Status", global = true)
-   public static boolean getAntiCheat12Status() {
-      String verificationKey = SafeAPI.getInstance().generateVerificationKey();
-      methodCache.put(verificationKey, ServerOptions.instance.getBoolean("AntiCheatProtectionType12"));
-      return (Boolean) methodCache.remove(verificationKey);
-   }
-
-   @LuaMethod(name = "getAntiCheat8Status", global = true)
-   public static boolean getAntiCheat8Status() {
-      // Add method verification
-      String verificationKey = SafeAPI.getInstance().generateVerificationKey();
-      methodCache.put(verificationKey, ServerOptions.instance.getBoolean("AntiCheatProtectionType8"));
-      return (Boolean) methodCache.remove(verificationKey);
-   }
-
    @LuaMethod(name = "requireExtra", global = true)
    public static void requireExtra(String file) {
-      String key = SafeAPI.getInstance().generateVerificationKey();
       try {
          String luaFile = file.endsWith(".lua") ? file : file + ".lua";
          if (!EtherMain.getInstance().etherLuaManager.luaFilesList.contains(luaFile)) {
@@ -1130,7 +1096,6 @@ public class EtherLuaMethods {
 
    @LuaMethod(name = "getExtraTexture", global = true)
    public static Texture getExtraTexture(String path) {
-      String key = SafeAPI.getInstance().generateVerificationKey();
       try {
          if (!path.endsWith(".png")) {
             Logger.printLog("Incorrect path to the image file. Required .png");
@@ -1174,7 +1139,6 @@ public class EtherLuaMethods {
 
    @LuaMethod(name = "hackAdminAccess", global = true)
    public static void hackAdminAccess() {
-      String key = SafeAPI.getInstance().generateVerificationKey();
       try {
          for (IsoPlayer player : GameClient.instance.getPlayers()) {
             if (player.isLocalPlayer()) {
@@ -1227,10 +1191,6 @@ public class EtherLuaMethods {
    )
    public static Color getAccentUIColor() {
       return EtherMain.getInstance().etherAPI.mainUIAccentColor;
-   }
-
-   protected void cleanMethodCache() {
-      methodCache.clear();
    }
 
    // Singleton pattern

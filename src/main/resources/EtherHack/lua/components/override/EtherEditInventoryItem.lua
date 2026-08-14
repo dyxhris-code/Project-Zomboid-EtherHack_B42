@@ -19,9 +19,11 @@ local function EtherEditInventoryItem(player, context, items)
     end
 
     context:addOption(getText("ContextMenu_EditItem"), items, function ()
-        local ui = ISItemEditorUI:new(50,50,600,600, getPlayer(), listItems[1]);
-        ui:initialise();
-        ui:addToUIManager();
+        local playerObj = getSpecificPlayer(player) or getPlayer()
+        local item = listItems[1]
+        if playerObj ~= nil and item ~= nil then
+            ISItemEditorUI.OpenPanel(playerObj, item)
+        end
     end, getPlayer());
 
     local removeOption = context:addOption(getTranslate("UI_DeleteItemTitle"))

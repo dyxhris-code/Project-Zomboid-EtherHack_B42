@@ -14,11 +14,11 @@ public class EtherLogo {
    }
 
    public void init() {
-      ArrayList var1 = GameWindow.states.States;
+      ArrayList var1 = GameWindow.states.states;
       GameState var2 = (GameState)var1.get(0);
       if (var2 instanceof TISLogoState) {
-         GameWindow.states.States.add(0, new EtherLogoState());
-         GameWindow.states.LoopToState = 1;
+         GameWindow.states.states.add(0, new EtherLogoState());
+         GameWindow.states.loopToState = 1;
       } else {
          Logger.printLog("Error when initializing the EtherLogo!");
       }

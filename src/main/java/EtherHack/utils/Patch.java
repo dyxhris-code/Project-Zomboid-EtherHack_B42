@@ -1,133 +1,270 @@
 package EtherHack.utils;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Modifier;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
-public class Patch {
-   private static final Map<String, ClassNode> classNodeMap = new HashMap<>();
+public final class Patch {
+    private static final String INJECTED_DESCRIPTOR = "LEtherHack/annotations/Injected;";
+    private static final Map<String, ClassNode> CLASS_NODES = new HashMap<>();
+    private static Path gameRoot;
+    private static Path gameArchive;
 
-   public static void injectIntoClass(String className, String methodName, boolean isStatic, Consumer<MethodNode> injector) {
-      Logger.print("Injection into a game file '" + className + "' in method: '" + methodName + "'");
+    private Patch() {
+    }
 
-      ClassNode classNode = classNodeMap.computeIfAbsent(className, key -> {
-         ClassNode node = new ClassNode();
-         try {
-            ClassReader reader = new ClassReader(key);
-            reader.accept(node, 0);
+    public static void configure(Path root, Path archive) {
+        gameRoot = root.toAbsolutePath().normalize();
+        gameArchive = archive.toAbsolutePath().normalize();
+        CLASS_NODES.clear();
+    }
+
+    public static boolean classExists(String className) {
+        requireConfigured();
+        if (Files.isRegularFile(looseClassPath(className))) {
+            return true;
+        }
+        try (JarFile jar = new JarFile(gameArchive.toFile())) {
+            return jar.getJarEntry(classEntry(className)) != null;
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to inspect " + gameArchive, exception);
+        }
+    }
+
+    public static void injectIntoClass(
+            String className,
+            String methodName,
+            String descriptor,
+            boolean isStatic,
+            Consumer<MethodNode> injector) {
+        Logger.print("Injection into '" + className + "' method '" + methodName + descriptor + "'");
+        ClassNode classNode = CLASS_NODES.computeIfAbsent(className, Patch::readClass);
+        MethodNode target = null;
+
+        for (MethodNode method : classNode.methods) {
+            boolean staticMethod = (method.access & Opcodes.ACC_STATIC) != 0;
+            if (method.name.equals(methodName)
+                    && method.desc.equals(descriptor)
+                    && staticMethod == isStatic) {
+                if (target != null) {
+                    throw new IllegalStateException(
+                            "Multiple matching methods in " + className + ": " + methodName + descriptor);
+                }
+                target = method;
+            }
+        }
+
+        if (target == null) {
+            throw new IllegalStateException(
+                    "Required B42.20.2 method not found in " + className + ": " + methodName + descriptor);
+        }
+        if (hasInjectedAnnotation(target)) {
+            throw new IllegalStateException(
+                    "Method is already patched in " + className + ": " + methodName + descriptor);
+        }
+
+        injector.accept(target);
+        addInjectedAnnotation(target);
+    }
+
+    public static boolean isInjectedAnnotationPresent(String className) {
+        requireConfigured();
+        Path looseClass = looseClassPath(className);
+        if (!Files.isRegularFile(looseClass)) {
+            return false;
+        }
+
+        try (InputStream input = Files.newInputStream(looseClass)) {
+            boolean[] found = {false};
+            new ClassReader(input).accept(new ClassVisitor(Opcodes.ASM9) {
+                @Override
+                public MethodVisitor visitMethod(
+                        int access,
+                        String name,
+                        String descriptor,
+                        String signature,
+                        String[] exceptions) {
+                    return new MethodVisitor(Opcodes.ASM9) {
+                        @Override
+                        public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
+                            if (INJECTED_DESCRIPTOR.equals(descriptor)) {
+                                found[0] = true;
+                            }
+                            return null;
+                        }
+                    };
+                }
+            }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            return found[0];
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to inspect " + looseClass, exception);
+        }
+    }
+
+    public static void saveModifiedClasses() {
+        requireConfigured();
+        try (URLClassLoader hierarchyLoader = createHierarchyLoader()) {
+            for (Map.Entry<String, ClassNode> entry : CLASS_NODES.entrySet()) {
+                Path output = looseClassPath(entry.getKey());
+                Files.createDirectories(output.getParent());
+
+                ClassWriter writer = new HierarchyClassWriter(
+                        ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES,
+                        hierarchyLoader);
+                entry.getValue().accept(writer);
+                writeAtomically(output, writer.toByteArray());
+            }
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to save patched classes", exception);
+        } finally {
+            CLASS_NODES.clear();
+        }
+    }
+
+    private static ClassNode readClass(String className) {
+        requireConfigured();
+        Path looseClass = looseClassPath(className);
+        try (InputStream input = Files.isRegularFile(looseClass)
+                ? Files.newInputStream(looseClass)
+                : openArchiveClass(className)) {
+            ClassNode node = new ClassNode(Opcodes.ASM9);
+            new ClassReader(input).accept(node, ClassReader.EXPAND_FRAMES);
             return node;
-         } catch (IOException e) {
-            Logger.print("Failed to read class: " + e.getMessage());
-            return null;
-         }
-      });
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to read game class " + className, exception);
+        }
+    }
 
-      if (classNode == null) {
-         throw new RuntimeException("Failed to load class " + className);
-      }
-
-      for (MethodNode methodNode : classNode.methods) {
-         if (methodNode.name.equals(methodName) && Modifier.isStatic(methodNode.access) == isStatic) {
-            if (!hasInjectedAnnotation(methodNode)) {
-               addInjectAnnotation(classNode, methodName);
-            }
-            injector.accept(methodNode);
-         }
-      }
-
-      classNodeMap.put(className, classNode);
-   }
-
-   public static boolean isInjectedAnnotationPresent(String file, String baseDir) {
-      Path filePath = Paths.get(baseDir, file);
-
-      try (FileInputStream fis = new FileInputStream(filePath.toString())) {
-         ClassReader reader = new ClassReader(fis);
-         boolean[] found = new boolean[]{false};
-
-         reader.accept(new ClassVisitor(589824) {
+    private static InputStream openArchiveClass(String className) throws IOException {
+        JarFile jar = new JarFile(gameArchive.toFile());
+        JarEntry entry = jar.getJarEntry(classEntry(className));
+        if (entry == null) {
+            jar.close();
+            throw new IOException("Missing " + classEntry(className) + " in " + gameArchive);
+        }
+        InputStream input = jar.getInputStream(entry);
+        return new InputStream() {
             @Override
-            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-               MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
-               return new MethodVisitor(589824, mv) {
-                  @Override
-                  public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
-                     if (descriptor.equals("LEtherHack/annotations/Injected;")) {
-                        found[0] = true;
-                     }
-                     return super.visitAnnotation(descriptor, visible);
-                  }
-               };
-            }
-         }, 0);
-
-         return found[0];
-      } catch (IOException e) {
-         Logger.print("Error checking for injected annotations: " + e.getMessage());
-         return false;
-      }
-   }
-
-   private static void addInjectAnnotation(ClassNode classNode, String methodName) {
-      for (MethodNode method : classNode.methods) {
-         if (method.name.equals(methodName)) {
-            if (method.visibleAnnotations == null) {
-               method.visibleAnnotations = new LinkedList<>();
+            public int read() throws IOException {
+                return input.read();
             }
 
-            // Check if annotation already exists
-            boolean hasAnnotation = method.visibleAnnotations.stream()
-                    .anyMatch(anno -> anno.desc.equals("LEtherHack/annotations/Injected;"));
-
-            if (!hasAnnotation) {
-               method.visibleAnnotations.add(new AnnotationNode("LEtherHack/annotations/Injected;"));
+            @Override
+            public int read(byte[] bytes, int offset, int length) throws IOException {
+                return input.read(bytes, offset, length);
             }
 
-            return;
-         }
-      }
-   }
-
-   private static boolean hasInjectedAnnotation(MethodNode method) {
-      if (method.visibleAnnotations == null) {
-         return false;
-      }
-      return method.visibleAnnotations.stream()
-              .anyMatch(anno -> anno.desc.equals("LEtherHack/annotations/Injected;"));
-   }
-
-   public static void saveModifiedClasses() {
-      for (Map.Entry<String, ClassNode> entry : classNodeMap.entrySet()) {
-         String className = entry.getKey();
-         ClassNode classNode = entry.getValue();
-
-         try {
-            ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-            classNode.accept(writer);
-            byte[] bytes = writer.toByteArray();
-
-            try (FileOutputStream fos = new FileOutputStream(className + ".class")) {
-               fos.write(bytes);
+            @Override
+            public void close() throws IOException {
+                try {
+                    input.close();
+                } finally {
+                    jar.close();
+                }
             }
-         } catch (IOException e) {
-            Logger.print("Error saving modified class '" + className + "': " + e.getMessage());
-         }
-      }
-   }
+        };
+    }
+
+    private static URLClassLoader createHierarchyLoader() throws IOException {
+        URL gameUrl = gameArchive.toUri().toURL();
+        URL etherHackUrl = Patch.class.getProtectionDomain().getCodeSource().getLocation();
+        return new URLClassLoader(new URL[] {gameUrl, etherHackUrl}, Patch.class.getClassLoader());
+    }
+
+    private static void writeAtomically(Path output, byte[] bytes) throws IOException {
+        Path temporary = Files.createTempFile(output.getParent(), output.getFileName().toString(), ".tmp");
+        try {
+            Files.write(temporary, bytes);
+            try {
+                Files.move(
+                        temporary,
+                        output,
+                        StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException ignored) {
+                Files.move(temporary, output, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
+    }
+
+    private static void addInjectedAnnotation(MethodNode method) {
+        if (method.visibleAnnotations == null) {
+            method.visibleAnnotations = new LinkedList<>();
+        }
+        method.visibleAnnotations.add(new AnnotationNode(INJECTED_DESCRIPTOR));
+    }
+
+    private static boolean hasInjectedAnnotation(MethodNode method) {
+        return method.visibleAnnotations != null
+                && method.visibleAnnotations.stream()
+                        .anyMatch(annotation -> INJECTED_DESCRIPTOR.equals(annotation.desc));
+    }
+
+    private static Path looseClassPath(String className) {
+        return gameRoot.resolve(classEntry(className));
+    }
+
+    private static String classEntry(String className) {
+        return className + ".class";
+    }
+
+    private static void requireConfigured() {
+        if (gameRoot == null || gameArchive == null) {
+            throw new IllegalStateException("Patch.configure must be called before patching");
+        }
+    }
+
+    private static final class HierarchyClassWriter extends ClassWriter {
+        private final ClassLoader hierarchyLoader;
+
+        private HierarchyClassWriter(int flags, ClassLoader hierarchyLoader) {
+            super(flags);
+            this.hierarchyLoader = hierarchyLoader;
+        }
+
+        @Override
+        protected String getCommonSuperClass(String type1, String type2) {
+            try {
+                Class<?> first = Class.forName(type1.replace('/', '.'), false, hierarchyLoader);
+                Class<?> second = Class.forName(type2.replace('/', '.'), false, hierarchyLoader);
+                if (first.isAssignableFrom(second)) {
+                    return type1;
+                }
+                if (second.isAssignableFrom(first)) {
+                    return type2;
+                }
+                if (first.isInterface() || second.isInterface()) {
+                    return "java/lang/Object";
+                }
+                do {
+                    first = first.getSuperclass();
+                } while (first != null && !first.isAssignableFrom(second));
+                return first == null ? "java/lang/Object" : first.getName().replace('.', '/');
+            } catch (ClassNotFoundException | LinkageError ignored) {
+                return "java/lang/Object";
+            }
+        }
+    }
 }

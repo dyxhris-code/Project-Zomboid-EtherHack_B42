@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/github/v/release/Yeet-Masta/Project-Zomboid-EtherHack" alt="GitHub release (latest by date)">
   <img src="https://img.shields.io/github/license/Yeet-Masta/Project-Zomboid-EtherHack" alt="GitHub">
   <img src="https://img.shields.io/github/commit-activity/t/Yeet-Masta/Project-Zomboid-EtherHack" alt="GitHub commit activity (branch)">
-  <img src="https://img.shields.io/badge/Java-17-green" alt="Java 17">
+  <img src="https://img.shields.io/badge/Java-25-green" alt="Java 25">
   <img src="https://img.shields.io/github/issues/Yeet-Masta/Project-Zomboid-EtherHack" alt="GitHub issues">
 </p>
 
@@ -15,7 +15,9 @@ I'm currecntly converting all the code to kotlin. I want to do this for several 
 There are repo's going around pretending to be EtherHack or just a PZ cheat (https://github.com/ayhantunay/Project-Zomboid-Cheat) and I HIGHLY ADVISE YOU DON"T DOWNLOAD THESE!!! They are asking you to download completely arbitrary DLL files and disable your fucking anti-virus!!! Please for the love of god, don't download this shit. Use your head!!!
 
 This is a cheat written in Java(API) and LUA(GUI) for Project Zomboid. It is aimed at providing the game with additional functionality that allows users to get some benefits. Please use responsibly and understand the consequences that may arise as a result of improper use.
-The performance of the cheat was tested on the latest version of the game `41.78.16 (Steam)` (July 09, 2023).
+The B42 migration targets Project Zomboid `42.20.2` (Steam). The installer preserves the original B41 EtherHack architecture: it reads classes from `projectzomboid.jar`, emits loose `zombie/...` overrides, and extracts runtime resources under the game-root `EtherHack/` directory.
+
+This branch does not create a standalone Mod, modify `projectzomboid.jar`, or implement a multiplayer legality detector. Server-side anti-cheat remains independent of the original client-side modification route.
 
 Edit: Finally after all this time! the project has been restored!!! I know the code quality is shit, but lest be honest it's better than nothing. And as a wise man once said "It Just Works" soooooooo. But, if any of you guys want to contribute, PLEASE! my dumb ass can't code that well and I really want this project to live on so any contrabutions would be helpful and apreaciated! Also, FUCK https://github.com/asledgehammer/EtherHammer !!! EAT SHIT!
 
@@ -63,7 +65,7 @@ You can watch the cheat [installation video](https://www.youtube.com/watch?v=Olx
 | Get Admin Access           |          -/+(*)          |          +          | Obtaining administrator rights on the server                                                                                                                                                                                                                    |
 | Open Admin Menu            |          -/+(*)          |          +          | Opens the admin window                                                                                                                                                                                                                                          |
 
-(*) - These functions work in multiplayer, provided that some types of anti-cheats are disabled, otherwise it will kick. As a rule, for servers with mods, some types are disabled, for example, [type 12](https://www.unknowncheats.me/forum/other-mmorpg-and-strategy/522818-project-zomboid-anti-cheat-types.html), but for full operation, [type 8](https://www.unknowncheats.me/forum/other-mmorpg-and-strategy/522818-project-zomboid-anti-cheat-types.html) is required to be disabled
+(*) - Multiplayer behavior is determined by the server and its existing anti-cheat configuration. This project does not detect, disable, or bypass server-side anti-cheat.
 
 (**) - It only works when creating a character from the main menu, that is, points will not be added to the menu after death. Solution: after death, log out of the server and connect again.
 
@@ -87,46 +89,39 @@ This section will provide information on how to get a local copy of the project 
 
 This tool requires:
 
--   [Java 17]([https://www.oracle.com/java/technologies/downloads/](https://adoptium.net/temurin/releases/?version=17)) or newer
+-   JDK 25 (the B42.20.2 classes use class-file major version 69)
 -   Steam copy of [Project Zomboid](https://store.steampowered.com/app/108600/Project_Zomboid/)
 
 ### Installation
 
-1. Download and install Java on your computer
-2. Make sure that the path to Java is set in your environment variables
+1. Install JDK 25 and make sure `java` is available on `PATH`
 
-(For Windows: `WIN + X` -> `"System"` -> `"Advanced System Parameters"` -> `"Environment Variables"` -> `Double click on "Path"` -> `Insert path to java, for example "C:\Program Files\Java\jdk-20\bin"`)
+(For Windows: `WIN + X` -> `System` -> `Advanced System Parameters` -> `Environment Variables` -> edit `Path` and add the JDK 25 `bin` directory.)
 
-3. Clone the repository
-4. Open the project in the IDE and build the executable via Gradle `.jar` file
-5. Move the created `.jar` to the root folder of the game 
+2. Clone the repository and build with the local game path:
+
+```
+gradlew.bat clean check jar -PpzHome="C:\\Steam\\steamapps\\common\\ProjectZomboid"
+```
+
+3. Move the created `build/EtherHack-2.9.3.jar` to the root folder of the game
 
 (For example, `c:\Steam\steamapps\common\ProjectZomboid`)
 
-6. Open the console in the root folder and run the following command: 
+4. Open a console in the game root and run:
 
 ```
 java -jar ./EtherHack-{yourVersion}.jar --install
 ```
 
-`{yourVersion}` - Specify your version of the cheat
-
-For example, for release 1.1, the command will look like this:
-```
-java -jar ./EtherHack-1.1.jar --install
-```
+The generated filename is currently `EtherHack-2.9.3.jar`.
 ### Uninstallation
 Open the console in the root folder and run the following command:
 ```
 java -jar ./EtherHack-{yourVersion}.jar --uninstall
 ```
 
-`{yourVersion}` - Specify your version of the cheat
-
-For example, for release 1.1, the command will look like this:
-```
-java -jar ./EtherHack-1.1.jar --uninstall
-```
+Use the same generated JAR filename for uninstallation.
 
 ## Usage
 
@@ -165,6 +160,8 @@ EtherRequire "path/to/your.lua"
 ```
 
 The path to Lua must be specified relative to the root folder of the game
+
+See [docs/B42_ACCEPTANCE.md](docs/B42_ACCEPTANCE.md) for the migration gates and manual smoke checklist.
 ## Contributing
 
 We welcome contributions from the community. If you want to contribute, please fork the repository and create a pull request with your changes.

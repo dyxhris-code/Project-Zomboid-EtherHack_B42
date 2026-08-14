@@ -4,8 +4,6 @@ require "ISUI/ISPanel"
 --* Подключение модулей
 --*********************************************************
 local etherModules = {
-    "EtherHack/lua/components/override/EtherAdminMenu.lua",
-    "EtherHack/lua/components/override/EtherDebugMenu.lua",
     "EtherHack/lua/components/override/EtherEditInventoryItem.lua",
     "EtherHack/lua/components/override/EtherEditWorldObjects.lua",
     "EtherHack/lua/components/ui/UIButtonsPanel.lua",

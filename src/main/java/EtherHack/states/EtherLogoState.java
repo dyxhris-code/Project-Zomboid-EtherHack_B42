@@ -20,13 +20,13 @@ public class EtherLogoState extends GameState {
    private final LogoElement etherLogo = new LogoElement("EtherHack/media/EtherLogo.png");
 
    public void enter() {
-      UIManager.bSuspend = true;
+      UIManager.suspend = true;
       this.alpha = 0.0F;
       this.targetAlpha = 1.0F;
    }
 
    public void exit() {
-      UIManager.bSuspend = false;
+      UIManager.suspend = false;
    }
 
    public void render() {
@@ -38,14 +38,14 @@ public class EtherLogoState extends GameState {
       } else {
          var1.StartFrameUI();
          var1.EndFrame();
-         boolean var2 = UIManager.useUIFBO;
-         UIManager.useUIFBO = false;
+         boolean var2 = UIManager.useUiFbo;
+         UIManager.useUiFbo = false;
          var1.StartFrameUI();
          SpriteRenderer.instance.renderi((Texture)null, 0, 0, var1.getOffscreenWidth(0), var1.getOffscreenHeight(0), 0.0F, 0.0F, 0.0F, 1.0F, (Consumer)null);
          this.etherLogo.centerOnScreen();
          this.etherLogo.render(this.alpha);
          var1.EndFrameUI();
-         UIManager.useUIFBO = var2;
+         UIManager.useUiFbo = var2;
       }
 
    }

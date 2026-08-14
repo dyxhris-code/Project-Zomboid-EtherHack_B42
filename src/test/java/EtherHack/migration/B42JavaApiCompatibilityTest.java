@@ -1,0 +1,109 @@
+package EtherHack.migration;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public final class B42JavaApiCompatibilityTest {
+    private static final Path JAVA_ROOT = Path.of("src/main/java/EtherHack");
+
+    private B42JavaApiCompatibilityTest() {
+    }
+
+    public static void main(String[] args) throws Exception {
+        verifiesGameplayApiMigration();
+        verifiesLogoAndUiMigration();
+        verifiesLoggingMigration();
+        verifiesScreenCoordinateMigration();
+    }
+
+    private static void verifiesGameplayApiMigration() throws Exception {
+        String source = read("Ether/EtherAPI.java");
+
+        require(source.contains("import zombie.characters.CharacterStat;"),
+                "EtherAPI must use B42 CharacterStat keys");
+        require(source.contains("import zombie.characters.Stats;"),
+                "EtherAPI must use the B42 Stats container");
+        require(source.contains("getCriticalDamageMultiplier()"),
+                "Weapon reads must use getCriticalDamageMultiplier");
+        require(source.contains("setCriticalDamageMultiplier("),
+                "Weapon writes must use setCriticalDamageMultiplier");
+        require(!source.contains("CritDmgMultiplier"),
+                "Removed B41 critical-damage method names remain");
+        require(source.contains("setCharacterStat(var1, CharacterStat.ENDURANCE, 1.0F)"),
+                "Endurance must be written through Stats.set");
+        require(source.contains("this.isDisableFear || this.isDisablePanic"),
+                "Fear and panic must have one explicit B42 PANIC policy");
+        require(source.contains("CharacterStat.PANIC"),
+                "The B42 fear/panic policy must target CharacterStat.PANIC");
+        require(source.contains("Set<BaseVehicle>"),
+                "B42 IsoCell.getVehicles returns a Set");
+        require(!source.contains("!= null || !"),
+                "Collection guards must not dereference null values");
+        require(source.contains("setIsFakeInfected(false)"),
+                "Fake infection reset must use the B42 BodyDamage API");
+        require(source.contains("setReduceFakeInfection(true)"),
+                "Fake infection reduction must use the B42 BodyDamage API");
+    }
+
+    private static void verifiesLogoAndUiMigration() throws Exception {
+        String logo = read("Ether/EtherLogo.java");
+        String state = read("states/EtherLogoState.java");
+
+        require(logo.contains("GameWindow.states.states"),
+                "EtherLogo must use GameStateMachine.states");
+        require(logo.contains("GameWindow.states.loopToState"),
+                "EtherLogo must use GameStateMachine.loopToState");
+        require(!logo.contains(".States") && !logo.contains(".LoopToState"),
+                "Removed B41 state-machine fields remain");
+        require(state.contains("UIManager.suspend"),
+                "EtherLogoState must use UIManager.suspend");
+        require(state.contains("UIManager.useUiFbo"),
+                "EtherLogoState must use UIManager.useUiFbo");
+        require(!state.contains("UIManager.bSuspend") && !state.contains("UIManager.useUIFBO"),
+                "Removed B41 UIManager fields remain");
+    }
+
+    private static void verifiesLoggingMigration() throws Exception {
+        String source = read("utils/Logger.java");
+
+        require(source.contains("DebugLog.log(DebugType.General, message)"),
+                "Logger must use the B42 DebugLog API");
+        require(source.contains("System.out.println(message)"),
+                "Logger must retain a startup-safe console fallback");
+        require(!source.contains("DebugLog.General"),
+                "Removed B41 DebugLog.General access remains");
+    }
+
+    private static void verifiesScreenCoordinateMigration() throws Exception {
+        for (String relative : new String[] {
+                "utils/PlayerUtils.java",
+                "utils/VehicleUtils.java",
+                "utils/ZombieUtils.java"}) {
+            String source = read(relative);
+            require(source.contains("IsoUtils.XToScreen(var0.getX(), var0.getY(), var0.getZ(), 0)"),
+                    relative + " must preserve B41 world-to-screen X projection");
+            require(source.contains("IsoUtils.YToScreen(var0.getX(), var0.getY(), var0.getZ(), 0)"),
+                    relative + " must preserve B41 world-to-screen Y projection");
+            require(source.contains("IsoCamera.getOffX()"),
+                    relative + " must preserve the camera X offset");
+            require(source.contains("IsoCamera.getOffY()"),
+                    relative + " must preserve the camera Y offset");
+            require(source.contains("Core.getInstance().getZoom(var1)"),
+                    relative + " must preserve player zoom scaling");
+            require(source.contains("Core.getTileScale()"),
+                    relative + " must use the B42 tile-scale API");
+            require(!source.contains("var0.x") && !source.contains("var0.y"),
+                    relative + " must not access protected entity coordinates");
+        }
+    }
+
+    private static String read(String relativePath) throws Exception {
+        return Files.readString(JAVA_ROOT.resolve(relativePath));
+    }
+
+    private static void require(boolean condition, String message) {
+        if (!condition) {
+            throw new AssertionError(message);
+        }
+    }
+}
