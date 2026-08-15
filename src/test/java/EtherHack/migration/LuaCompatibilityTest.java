@@ -28,6 +28,8 @@ public final class LuaCompatibilityTest {
         rejectsStaleB41Symbols();
         usesNativeB42ItemEditor();
         guardsVehicleLookup();
+        rejectsRemovedInfoPanelAntiCheatStatus();
+        usesQuietEnglishTranslationFallback();
         resolvesLuaRequires();
         parsesLuaSyntaxWhenCompilerIsAvailable();
     }
@@ -70,6 +72,23 @@ public final class LuaCompatibilityTest {
                 "UIMechanics vehicle lookup must guard a missing player");
         require(!mechanics.contains("self.localPlayer:getNearVehicle()"),
                 "UIMechanics must not dereference a missing player or vehicle directly");
+    }
+
+    private static void rejectsRemovedInfoPanelAntiCheatStatus() throws IOException {
+        String source = read("components/panels/EtherInfoPanel.lua");
+        require(!source.contains("getAntiCheat12Status")
+                        && !source.contains("getAntiCheat8Status")
+                        && !source.contains("AntiCheatStatus"),
+                "EtherInfoPanel must not render the removed anti-cheat detection subsystem");
+    }
+
+    private static void usesQuietEnglishTranslationFallback() throws IOException {
+        String source = Files.readString(
+                Path.of("src/main/java/EtherHack/Ether/EtherTranslator.java"));
+        require(!source.contains("No translations for language code"),
+                "Missing-language fallback must not log once per translated label and rendered frame");
+        require(source.contains("this.translations.get(\"EN\")"),
+                "Unsupported game languages must retain the English fallback");
     }
 
     private static void resolvesLuaRequires() throws IOException {

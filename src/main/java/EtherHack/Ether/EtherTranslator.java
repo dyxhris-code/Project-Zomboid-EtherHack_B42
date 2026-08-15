@@ -87,7 +87,6 @@ public class EtherTranslator {
          String var3 = Translator.getLanguage().name();
          Map var4 = (Map)this.translations.get(var3);
          if (var4 == null) {
-            Logger.printLog("No translations for language code: " + var3);
             var4 = (Map)this.translations.get("EN");
             if (var4 == null) {
                return var1;
