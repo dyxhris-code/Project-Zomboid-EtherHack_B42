@@ -30,6 +30,9 @@ import zombie.inventory.InventoryItem;
 import zombie.inventory.types.HandWeapon;
 import zombie.iso.IsoWorld;
 import zombie.network.GameClient;
+import zombie.network.PacketTypes;
+import zombie.network.packets.INetworkPacket;
+import zombie.network.packets.SyncPlayerStatsPacket;
 import zombie.ui.UIFont;
 import zombie.vehicles.BaseVehicle;
 
@@ -37,6 +40,7 @@ public class EtherAPI {
    private Exposer exposer;
    final ConcurrentHashMap<String, Texture> textureCache = new ConcurrentHashMap<>();
    private final ConcurrentHashMap<String, float[]> originalWeaponStats = new ConcurrentHashMap<>();
+   private final ConcurrentHashMap<CharacterStat, Long> lastStatSyncTimes = new ConcurrentHashMap<>();
    public Color mainUIAccentColor;
    public Color vehiclesUIColor;
    public Color zombiesUIColor;
@@ -396,6 +400,7 @@ public class EtherAPI {
    private void updateLocalPlayerFeatures() {
       IsoPlayer var1 = IsoPlayer.getInstance();
       if (var1 != null) {
+         boolean extraInfoChanged = false;
          InventoryItem var2 = var1.getPrimaryHandItem();
          HandWeapon var3;
          if (this.isExtraDamage && var2 != null && (var2.getStringItemType().equals("RangedWeapon") || var2.getStringItemType().equals("MeleeWeapon")) && var2 instanceof HandWeapon) {
@@ -420,6 +425,7 @@ public class EtherAPI {
 
          if (var1.isTimedActionInstantCheat() != this.isTimedActionCheat) {
             var1.setTimedActionInstantCheat(this.isTimedActionCheat);
+            extraInfoChanged = true;
          }
 
          if (var1.isWearingNightVisionGoggles() != this.isEnableNightVision) {
@@ -428,18 +434,41 @@ public class EtherAPI {
 
          if (var1.isGodMod() != this.isEnableGodMode) {
             var1.setGodMod(this.isEnableGodMode);
+            extraInfoChanged = true;
          }
 
          if (var1.isNoClip() != this.isEnableNoclip) {
             var1.setNoClip(this.isEnableNoclip);
+            extraInfoChanged = true;
          }
 
          if (var1.isInvisible() != this.isEnableInvisible) {
             var1.setInvisible(this.isEnableInvisible);
+            extraInfoChanged = true;
          }
 
          if (var1.isZombiesDontAttack() != this.isZombieDontAttack) {
             var1.setZombiesDontAttack(this.isZombieDontAttack);
+            extraInfoChanged = true;
+         }
+
+         if (var1.isUnlimitedCarry() != this.isUnlimitedCarry) {
+            var1.setUnlimitedCarry(this.isUnlimitedCarry);
+            extraInfoChanged = true;
+         }
+
+         if (var1.isUnlimitedEndurance() != this.isUnlimitedEndurance) {
+            var1.setUnlimitedEndurance(this.isUnlimitedEndurance);
+            extraInfoChanged = true;
+         }
+
+         if (var1.isUnlimitedAmmo() != this.isUnlimitedAmmo) {
+            var1.setUnlimitedAmmo(this.isUnlimitedAmmo);
+            extraInfoChanged = true;
+         }
+
+         if (extraInfoChanged && GameClient.client) {
+            GameClient.sendPlayerExtraInfo(var1);
          }
 
          if (this.isNoRecoil && var2 != null && var2.getStringItemType().equals("RangedWeapon") && var2 instanceof HandWeapon) {
@@ -583,9 +612,22 @@ public class EtherAPI {
       }
    }
 
-   private static void setCharacterStat(IsoPlayer var1, CharacterStat var2, float var3) {
-      Stats var4 = var1.getStats();
-      var4.set(var2, var3);
+   private void setCharacterStat(IsoPlayer player, CharacterStat stat, float value) {
+      Stats stats = player.getStats();
+      if (Float.compare(stats.get(stat), value) == 0) {
+         return;
+      }
+
+      stats.set(stat, value);
+      if (GameClient.client) {
+         long now = System.currentTimeMillis();
+         long lastSync = this.lastStatSyncTimes.getOrDefault(stat, 0L);
+         if (now - lastSync >= 500L) {
+            INetworkPacket.send(PacketTypes.PacketType.SyncPlayerStats,
+                    player, SyncPlayerStatsPacket.getBitMaskForStat(stat));
+            this.lastStatSyncTimes.put(stat, now);
+         }
+      }
    }
 
    @SubscribeLuaEvent(

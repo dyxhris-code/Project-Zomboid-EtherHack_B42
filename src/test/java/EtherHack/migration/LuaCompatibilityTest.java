@@ -29,6 +29,11 @@ public final class LuaCompatibilityTest {
         rejectsStaleB41Symbols();
         usesNativeB42ItemEditor();
         guardsVehicleLookup();
+        usesServerAuthoritativeItemGrant();
+        syncsNativeAdminPowerFlags();
+        guardsB42UiLifecycleState();
+        guardsOptionalB42WorldSystems();
+        usesNativeB42CenteredTextDrawing();
         rejectsRemovedInfoPanelAntiCheatStatus();
         usesQuietEnglishTranslationFallback();
         providesCurrentChineseTranslations();
@@ -74,6 +79,53 @@ public final class LuaCompatibilityTest {
                 "UIMechanics vehicle lookup must guard a missing player");
         require(!mechanics.contains("self.localPlayer:getNearVehicle()"),
                 "UIMechanics must not dereference a missing player or vehicle directly");
+    }
+
+    private static void usesServerAuthoritativeItemGrant() throws IOException {
+        String source = read("components/ui/UIItemTables.lua");
+        require(source.contains("SendCommandToServer(\"/additem"),
+                "Multiplayer item grants must use the B42 server-authoritative additem command");
+        require(source.contains("if isClient() then"),
+                "Item grants must preserve the local single-player path");
+    }
+
+    private static void syncsNativeAdminPowerFlags() throws IOException {
+        String source = read("components/panels/EtherCharacterPanel.lua");
+        require(source.contains("player:setBuildCheat(isChecked)"),
+                "Build cheat must update the B42 player admin-power flag");
+        require(source.contains("player:setFarmingCheat(isChecked)"),
+                "Farming cheat must update the B42 player admin-power flag");
+        require(source.contains("sendPlayerExtraInfo(player)"),
+                "B42 admin-power flag changes must be sent to the server");
+    }
+
+    private static void guardsB42UiLifecycleState() throws IOException {
+        String editor = read("components/panels/EtherPlayerEditor.lua");
+        require(editor.contains("if profession ~= nil then"),
+                "Player editor must handle removed or unknown B42 professions");
+
+        String exploit = read("components/panels/EtherExploitPanel.lua");
+        require(!exploit.contains("isBypassDebugMode")
+                        && !exploit.contains("toggleBypassDebugMode"),
+                "Exploit panel must not call the removed B42 debug-bypass API");
+        require(exploit.contains("if CharacterCreationProfession.instance ~= nil then"),
+                "Trait-point controls must only access the character-creation screen while it exists");
+    }
+
+    private static void guardsOptionalB42WorldSystems() throws IOException {
+        String source = read("components/override/EtherEditWorldObjects.lua");
+        require(source.contains("CMetalDrumSystem.instance ~= nil"),
+                "World debug menu must guard the optional B42 metal-drum client system");
+        require(source.contains("CRainBarrelSystem.instance ~= nil"),
+                "World debug menu must guard the optional B42 rain-barrel client system");
+    }
+
+    private static void usesNativeB42CenteredTextDrawing() throws IOException {
+        String source = read("components/panels/EtherInfoPanel.lua");
+        require(source.contains("self:drawTextCentre("),
+                "Information panel must use the native B42 centered-text API");
+        require(!source.contains("function EtherInfoPanel:drawTextCentered"),
+                "Information panel must not retain its fragile legacy centered-text wrapper");
     }
 
     private static void rejectsRemovedInfoPanelAntiCheatStatus() throws IOException {

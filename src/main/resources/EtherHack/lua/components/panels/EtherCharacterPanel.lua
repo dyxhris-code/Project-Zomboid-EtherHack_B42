@@ -5,6 +5,12 @@ require "ISUI/ISPanel"
 --*********************************************************
 EtherCharacterPanel = ISPanel:derive("EtherCharacterPanel"); -- Наследование от ISPanel
 
+local function syncEtherPlayerExtraInfo(player)
+    if isClient() and player ~= nil then
+        sendPlayerExtraInfo(player)
+    end
+end
+
 --*********************************************************
 --* Добавление чекбоксов
 --*********************************************************
@@ -68,10 +74,20 @@ function EtherCharacterPanel:createChildren()
 
     self:addCheckBox(getTranslate("UI_CharacterPanel_BuildCheat"), function(isChecked)
         ISBuildMenu.cheat = isChecked;
+        local player = getPlayer()
+        if player ~= nil then
+            player:setBuildCheat(isChecked)
+            syncEtherPlayerExtraInfo(player)
+        end
     end, ISBuildMenu.cheat, false);
 
     self:addCheckBox(getTranslate("UI_CharacterPanel_FarmingCheat"), function(isChecked)
         ISFarmingMenu.cheat = isChecked;
+        local player = getPlayer()
+        if player ~= nil then
+            player:setFarmingCheat(isChecked)
+            syncEtherPlayerExtraInfo(player)
+        end
     end, ISFarmingMenu.cheat, false);
 
     self:addCheckBox(getTranslate("UI_CharacterPanel_GodMode"), function(isChecked)

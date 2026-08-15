@@ -31,6 +31,14 @@ public final class B42JavaApiCompatibilityTest {
                 "Removed B41 critical-damage method names remain");
         require(source.contains("setCharacterStat(var1, CharacterStat.ENDURANCE, 1.0F)"),
                 "Endurance must be written through Stats.set");
+        require(source.contains("SyncPlayerStatsPacket.getBitMaskForStat(stat)"),
+                "Multiplayer body-stat changes must use the B42 stat bit mask");
+        require(source.contains("INetworkPacket.send(PacketTypes.PacketType.SyncPlayerStats"),
+                "Multiplayer body-stat changes must be sent to the authoritative server");
+        require(source.contains("GameClient.sendPlayerExtraInfo(var1);"),
+                "B42 admin-power flags must be sent to the authoritative server");
+        require(source.contains("var1.setUnlimitedEndurance(this.isUnlimitedEndurance);"),
+                "Unlimited endurance must use the native B42 admin-power flag");
         require(source.contains("this.isDisableFear || this.isDisablePanic"),
                 "Fear and panic must have one explicit B42 PANIC policy");
         require(source.contains("CharacterStat.PANIC"),

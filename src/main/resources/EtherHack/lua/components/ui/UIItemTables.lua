@@ -7,6 +7,20 @@ UIItemTables = ISPanel:derive("UIItemTables");
 
 local fontHeightSmall = getTextManager():getFontHeight(UIFont.Small)
 
+local function giveEtherItem(itemType, count)
+    if isClient() then
+        local player = getPlayer()
+        if player == nil then return end
+
+        for _ = 1, count do
+            SendCommandToServer("/additem \"" .. player:getUsername() .. "\" \"" .. itemType .. "\"")
+        end
+        return
+    end
+
+    giveItem(itemType, count)
+end
+
 --*********************************************************
 --* Обработка render
 --*********************************************************
@@ -71,7 +85,7 @@ function UIItemTables:createChildren()
     self.addItemX1 = UIButton:new(0, self.height - 80, 100, 24, getTranslate("UI_ItemCreator_Button_AddItemX1"), 
     function() 
         local item = self.datas.items[self.datas.selected].item;
-        giveItem(item:getFullName(), 1);
+        giveEtherItem(item:getFullName(), 1);
     end)
     self.addItemX1:initialise();
     self.addItemX1:instantiate();
@@ -86,7 +100,7 @@ function UIItemTables:createChildren()
     self.addItemX2 = UIButton:new(self.addItemX1:getX() + self.addItemX1.width + 10, self.height - 80, 100, 24, getTranslate("UI_ItemCreator_Button_AddItemX2"), 
     function() 
         local item = self.datas.items[self.datas.selected].item;
-        giveItem(item:getFullName(), 2);
+        giveEtherItem(item:getFullName(), 2);
     end)
     self.addItemX2:initialise();
     self.addItemX2:instantiate();
@@ -101,7 +115,7 @@ function UIItemTables:createChildren()
     self.addItemX5 = UIButton:new(self.addItemX2:getX() + self.addItemX2.width + 10, self.height - 80, 100, 24, getTranslate("UI_ItemCreator_Button_AddItemX5"), 
     function() 
         local item = self.datas.items[self.datas.selected].item;
-        giveItem(item:getFullName(), 5);
+        giveEtherItem(item:getFullName(), 5);
     end)
     self.addItemX5:initialise();
     self.addItemX5:instantiate();
@@ -116,7 +130,7 @@ function UIItemTables:createChildren()
     self.addItemX10 = UIButton:new(self.addItemX5:getX() + self.addItemX5.width + 10, self.height - 80, 100, 24, getTranslate("UI_ItemCreator_Button_AddItemX10"), 
     function() 
         local item = self.datas.items[self.datas.selected].item;
-        giveItem(item:getFullName(), 10);
+        giveEtherItem(item:getFullName(), 10);
     end)
     self.addItemX10:initialise();
     self.addItemX10:instantiate();
