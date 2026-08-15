@@ -20,6 +20,7 @@ public final class LuaCompatibilityTest {
                     "D:/Apps/Steam/steamapps/common/ProjectZomboid"))
             .resolve("media/lua");
     private static final Pattern REQUIRE = Pattern.compile("(?m)^\\s*require\\s*[\\( ]?\\s*[\"']([^\"']+)[\"']");
+    private static final Pattern TRANSLATION_KEY = Pattern.compile("(?m)^\\s*([A-Za-z0-9_]+)\\s*=");
 
     private LuaCompatibilityTest() {
     }
@@ -30,6 +31,7 @@ public final class LuaCompatibilityTest {
         guardsVehicleLookup();
         rejectsRemovedInfoPanelAntiCheatStatus();
         usesQuietEnglishTranslationFallback();
+        providesCurrentChineseTranslations();
         resolvesLuaRequires();
         parsesLuaSyntaxWhenCompilerIsAvailable();
     }
@@ -89,6 +91,32 @@ public final class LuaCompatibilityTest {
                 "Missing-language fallback must not log once per translated label and rendered frame");
         require(source.contains("this.translations.get(\"EN\")"),
                 "Unsupported game languages must retain the English fallback");
+    }
+
+    private static void providesCurrentChineseTranslations() throws IOException {
+        Path translations = Path.of("src/main/resources/EtherHack/translations");
+        Path chinese = translations.resolve("CN.txt");
+        require(Files.isRegularFile(chinese),
+                "The B42 migration must include the Chinese translation from the B42.18 branch");
+
+        String englishSource = Files.readString(translations.resolve("EN.txt"));
+        String chineseSource = Files.readString(chinese);
+        List<String> missing = translationKeys(englishSource).stream()
+                .filter(key -> !translationKeys(chineseSource).contains(key))
+                .toList();
+        require(missing.isEmpty(), "Chinese translation is missing keys: " + missing);
+        require(!chineseSource.contains("EtherDebug")
+                        && !chineseSource.contains("AntiCheatStatus"),
+                "Chinese text must describe the current B41-style architecture");
+    }
+
+    private static List<String> translationKeys(String source) {
+        List<String> keys = new ArrayList<>();
+        Matcher matcher = TRANSLATION_KEY.matcher(source);
+        while (matcher.find()) {
+            keys.add(matcher.group(1));
+        }
+        return keys;
     }
 
     private static void resolvesLuaRequires() throws IOException {
