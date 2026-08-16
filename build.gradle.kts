@@ -10,7 +10,7 @@ plugins {
     java
 }
 
-group = "EtherHack"
+group = "EtherTrainer"
 
 java {
     toolchain {
@@ -137,7 +137,7 @@ tasks.named<JavaCompile>("compileJava") {
 tasks.named<Jar>("jar") {
     dependsOn("verifyDependencyIsolation")
     destinationDirectory.set(layout.buildDirectory)
-    archiveFileName.set("EtherHack-${version}.jar")
+    archiveFileName.set("EtherTrainer-${version}.jar")
     manifest.attributes["Main-Class"] = "EtherHack.Main"
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     isPreserveFileTimestamps = false

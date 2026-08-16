@@ -6,6 +6,7 @@ public class EtherMain {
    private static EtherMain instance;
    public EtherTranslator etherTranslator;
    public EtherCredits etherCredits;
+   public EtherOverlay etherOverlay;
    public EtherLuaManager etherLuaManager;
    public EtherAPI etherAPI;
 
@@ -13,15 +14,16 @@ public class EtherMain {
    }
 
    public void init() {
-      Logger.printLog("Initializing EtherHack...");
+      Logger.printLog("Initializing EtherTrainer...");
       this.etherTranslator = new EtherTranslator();
       this.etherTranslator.loadTranslations();
       this.etherCredits = new EtherCredits();
+      this.etherOverlay = new EtherOverlay();
       this.etherAPI = new EtherAPI();
       this.etherAPI.loadAPI();
       this.etherLuaManager = new EtherLuaManager();
       this.etherLuaManager.loadLua();
-      Logger.printLog("Initialization EtherHack was completed!");
+      Logger.printLog("EtherTrainer initialization completed!");
    }
 
    public static EtherMain getInstance() {

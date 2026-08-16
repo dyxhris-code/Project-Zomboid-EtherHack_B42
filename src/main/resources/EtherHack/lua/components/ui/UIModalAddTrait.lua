@@ -10,9 +10,9 @@ UIModalAddTrait = ISPanel:derive("UIModalAddTrait");
 --* Создание дочерних элементов
 --*********************************************************
 function UIModalAddTrait:createChildren()
-    for i=0,TraitFactory.getTraits():size()-1 do
-        local trait = TraitFactory.getTraits():get(i);
-        if not self.localPlayer:getTraits():contains(trait:getType()) then
+    for i=0,CharacterTraitDefinition.getTraits():size()-1 do
+        local trait = CharacterTraitDefinition.getTraits():get(i);
+        if not self.localPlayer:getCharacterTraits():get(trait:getType()) then
             if trait:getCost() >= 0 then
                 table.insert(self.goodTraits, trait)
             else
@@ -33,7 +33,8 @@ function UIModalAddTrait:createChildren()
         end
         local trait = list[self.combo.selected];
         
-        self.localPlayer:getTraits():add(trait:getType());
+        self.localPlayer:getCharacterTraits():add(trait:getType());
+        self.localPlayer:modifyTraitXPBoost(trait:getType(), false);
         SyncXp(self.localPlayer);
         UITraitsTable.instance:updateTraits();
     end)

@@ -8,9 +8,9 @@ public class Info {
    public static final String CHEAT_GUI_TITLE;
    public static final String CHEAT_CREDITS_TITLE;
    public static final String CHEAT_WINDOW_TITLE_SUFFIX;
-   public static final String CHEAT_NAME = "EtherHack";
+   public static final String CHEAT_NAME = "EtherTrainer";
    public static final String CHEAT_AUTHOR = "Yeet-Masta";
-   public static final String CHEAT_TAG = "[EtherHack]: ";
+   public static final String CHEAT_TAG = "[EtherTrainer]: ";
    public static final String CHEAT_CREDITS_AUTHOR = "Author: Yeet-Masta";
 
    static {
@@ -23,8 +23,8 @@ public class Info {
          throw new ExceptionInInitializerError("Unable to load version from EtherHack.properties");
       }
 
-      CHEAT_GUI_TITLE = "EtherHack (" + CHEAT_VERSION + ")";
-      CHEAT_CREDITS_TITLE = "Patched by EtherHack (" + CHEAT_VERSION + ")";
-      CHEAT_WINDOW_TITLE_SUFFIX = " by EtherHack (" + CHEAT_VERSION + ")";
+      CHEAT_GUI_TITLE = CHEAT_NAME + " (" + CHEAT_VERSION + ")";
+      CHEAT_CREDITS_TITLE = CHEAT_NAME + " (" + CHEAT_VERSION + ")";
+      CHEAT_WINDOW_TITLE_SUFFIX = " by " + CHEAT_NAME + " (" + CHEAT_VERSION + ")";
    }
 }

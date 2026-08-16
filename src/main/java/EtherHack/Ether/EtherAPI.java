@@ -2,6 +2,8 @@ package EtherHack.Ether;
 
 import EtherHack.annotations.LuaEvents;
 import EtherHack.annotations.SubscribeLuaEvent;
+import EtherHack.features.AutoAimController;
+import EtherHack.features.LocalPlayerCheatController;
 import EtherHack.utils.ColorUtils;
 import EtherHack.utils.ConfigUtils;
 import EtherHack.utils.EventSubscriber;
@@ -37,10 +39,17 @@ import zombie.ui.UIFont;
 import zombie.vehicles.BaseVehicle;
 
 public class EtherAPI {
+   public static final String ITEM_GRANT_MODE_LOCAL_NATIVE = "local-native";
+   public static final String ITEM_GRANT_MODE_ADMIN_COMMAND = "admin-command";
+   public static final String ITEM_GRANT_MODE_SERVER_WORLD_ACTION = "server-world-action";
+   private static final String LEGACY_ITEM_GRANT_MODE_AUTOMATIC = "automatic";
+   private static final String LEGACY_ITEM_GRANT_MODE_SERVER_AUTHORIZED = "server-authorized";
+
    private Exposer exposer;
    final ConcurrentHashMap<String, Texture> textureCache = new ConcurrentHashMap<>();
    private final ConcurrentHashMap<String, float[]> originalWeaponStats = new ConcurrentHashMap<>();
    private final ConcurrentHashMap<CharacterStat, Long> lastStatSyncTimes = new ConcurrentHashMap<>();
+   public final AutoAimController autoAim = new AutoAimController();
    public Color mainUIAccentColor;
    public Color vehiclesUIColor;
    public Color zombiesUIColor;
@@ -91,10 +100,27 @@ public class EtherAPI {
    public boolean isVisualDrawLineToVehicle;
    public boolean isVisualDrawLineToPlayers;
    public boolean isVisualEnable360Vision;
+   public boolean isOverlayStatusEnable;
+   public boolean isOverlayWeaponInfo;
+   public boolean isOverlayEntityCounts;
    public boolean isMapDrawLocalPlayer;
    public boolean isMapDrawAllPlayers;
    public boolean isMapDrawVehicles;
    public boolean isMapDrawZombies;
+   public String itemGrantMode;
+
+   public static String normalizeItemGrantMode(String mode) {
+      if (ITEM_GRANT_MODE_LOCAL_NATIVE.equals(mode)
+              || ITEM_GRANT_MODE_ADMIN_COMMAND.equals(mode)
+              || ITEM_GRANT_MODE_SERVER_WORLD_ACTION.equals(mode)) {
+         return mode;
+      }
+      if (LEGACY_ITEM_GRANT_MODE_AUTOMATIC.equals(mode)
+              || LEGACY_ITEM_GRANT_MODE_SERVER_AUTHORIZED.equals(mode)) {
+         return ITEM_GRANT_MODE_SERVER_WORLD_ACTION;
+      }
+      return ITEM_GRANT_MODE_SERVER_WORLD_ACTION;
+   }
 
    public void saveConfig(String var1) {
       String var2 = "EtherHack/config/" + var1 + ".properties";
@@ -103,6 +129,7 @@ public class EtherAPI {
       var3.setProperty("vehiclesUIColor", ColorUtils.colorToString(this.vehiclesUIColor));
       var3.setProperty("zombiesUIColor", ColorUtils.colorToString(this.zombiesUIColor));
       var3.setProperty("playersUIColor", ColorUtils.colorToString(this.playersUIColor));
+      var3.setProperty("itemGrantMode", normalizeItemGrantMode(this.itemGrantMode));
       var3.setProperty("isPlayerInSafeTeleported", Boolean.toString(this.isPlayerInSafeTeleported));
       var3.setProperty("isMultiHitZombies", Boolean.toString(this.isMultiHitZombies));
       var3.setProperty("isPlayerInSafeTeleported", Boolean.toString(this.isPlayerInSafeTeleported));
@@ -115,6 +142,7 @@ public class EtherAPI {
       var3.setProperty("isEnableNightVision", Boolean.toString(this.isEnableNightVision));
       var3.setProperty("isZombieDontAttack", Boolean.toString(this.isZombieDontAttack));
       var3.setProperty("isNoRecoil", Boolean.toString(this.isNoRecoil));
+      var3.setProperty("isAutoAimEnabled", Boolean.toString(this.autoAim.isEnabled()));
       var3.setProperty("isUnlimitedCarry", Boolean.toString(this.isUnlimitedCarry));
       var3.setProperty("isUnlimitedCondition", Boolean.toString(this.isUnlimitedCondition));
       var3.setProperty("isUnlimitedEndurance", Boolean.toString(this.isUnlimitedEndurance));
@@ -151,6 +179,9 @@ public class EtherAPI {
       var3.setProperty("isVisualDrawLineToVehicle", Boolean.toString(this.isVisualDrawLineToVehicle));
       var3.setProperty("isVisualDrawLineToPlayers", Boolean.toString(this.isVisualDrawLineToPlayers));
       var3.setProperty("isVisualEnable360Vision", Boolean.toString(this.isVisualEnable360Vision));
+      var3.setProperty("isOverlayStatusEnable", Boolean.toString(this.isOverlayStatusEnable));
+      var3.setProperty("isOverlayWeaponInfo", Boolean.toString(this.isOverlayWeaponInfo));
+      var3.setProperty("isOverlayEntityCounts", Boolean.toString(this.isOverlayEntityCounts));
       var3.setProperty("isMapDrawLocalPlayer", Boolean.toString(this.isMapDrawLocalPlayer));
       var3.setProperty("isMapDrawAllPlayers", Boolean.toString(this.isMapDrawAllPlayers));
       var3.setProperty("isMapDrawVehicles", Boolean.toString(this.isMapDrawVehicles));
@@ -207,6 +238,7 @@ public class EtherAPI {
       this.vehiclesUIColor = ConfigUtils.getColorFromConfig(var3, "vehiclesUIColor", new Color(150, 150, 200));
       this.zombiesUIColor = ConfigUtils.getColorFromConfig(var3, "zombiesUIColor", new Color(255, 150, 100));
       this.playersUIColor = ConfigUtils.getColorFromConfig(var3, "playersUIColor", new Color(255, 50, 100));
+      this.itemGrantMode = normalizeItemGrantMode(var3.getProperty("itemGrantMode"));
       this.isPlayerInSafeTeleported = ConfigUtils.getBooleanFromConfig(var3, "isPlayerInSafeTeleported", false);
       this.isMultiHitZombies = ConfigUtils.getBooleanFromConfig(var3, "isMultiHitZombies", false);
       this.isExtraDamage = ConfigUtils.getBooleanFromConfig(var3, "isExtraDamage", false);
@@ -217,6 +249,7 @@ public class EtherAPI {
       this.isEnableNightVision = ConfigUtils.getBooleanFromConfig(var3, "isEnableNightVision", false);
       this.isZombieDontAttack = ConfigUtils.getBooleanFromConfig(var3, "isZombieDontAttack", false);
       this.isNoRecoil = ConfigUtils.getBooleanFromConfig(var3, "isNoRecoil", false);
+      this.autoAim.setEnabled(ConfigUtils.getBooleanFromConfig(var3, "isAutoAimEnabled", false));
       this.isUnlimitedCarry = ConfigUtils.getBooleanFromConfig(var3, "isUnlimitedCarry", false);
       this.isUnlimitedCondition = ConfigUtils.getBooleanFromConfig(var3, "isUnlimitedCondition", false);
       this.isUnlimitedEndurance = ConfigUtils.getBooleanFromConfig(var3, "isUnlimitedEndurance", false);
@@ -253,6 +286,9 @@ public class EtherAPI {
       this.isVisualDrawLineToVehicle = ConfigUtils.getBooleanFromConfig(var3, "isVisualDrawLineToVehicle", false);
       this.isVisualDrawLineToPlayers = ConfigUtils.getBooleanFromConfig(var3, "isVisualDrawLineToPlayers", false);
       this.isVisualEnable360Vision = ConfigUtils.getBooleanFromConfig(var3, "isVisualEnable360Vision", false);
+      this.isOverlayStatusEnable = ConfigUtils.getBooleanFromConfig(var3, "isOverlayStatusEnable", true);
+      this.isOverlayWeaponInfo = ConfigUtils.getBooleanFromConfig(var3, "isOverlayWeaponInfo", true);
+      this.isOverlayEntityCounts = ConfigUtils.getBooleanFromConfig(var3, "isOverlayEntityCounts", true);
       this.isMapDrawLocalPlayer = ConfigUtils.getBooleanFromConfig(var3, "isMapDrawLocalPlayer", true);
       this.isMapDrawAllPlayers = ConfigUtils.getBooleanFromConfig(var3, "isMapDrawAllPlayers", false);
       this.isMapDrawVehicles = ConfigUtils.getBooleanFromConfig(var3, "isMapDrawVehicles", false);
@@ -286,6 +322,7 @@ public class EtherAPI {
       this.vehiclesUIColor = ConfigUtils.getColorFromConfig(var1, "vehiclesUIColor", new Color(150, 150, 200));
       this.zombiesUIColor = ConfigUtils.getColorFromConfig(var1, "zombiesUIColor", new Color(255, 150, 100));
       this.playersUIColor = ConfigUtils.getColorFromConfig(var1, "playersUIColor", new Color(255, 50, 100));
+      this.itemGrantMode = normalizeItemGrantMode(var1.getProperty("itemGrantMode"));
       this.isPlayerInSafeTeleported = ConfigUtils.getBooleanFromConfig(var1, "isPlayerInSafeTeleported", false);
       this.isMultiHitZombies = ConfigUtils.getBooleanFromConfig(var1, "isMultiHitZombies", false);
       this.isExtraDamage = ConfigUtils.getBooleanFromConfig(var1, "isExtraDamage", false);
@@ -296,6 +333,7 @@ public class EtherAPI {
       this.isEnableNightVision = ConfigUtils.getBooleanFromConfig(var1, "isEnableNightVision", false);
       this.isZombieDontAttack = ConfigUtils.getBooleanFromConfig(var1, "isZombieDontAttack", false);
       this.isNoRecoil = ConfigUtils.getBooleanFromConfig(var1, "isNoRecoil", false);
+      this.autoAim.setEnabled(ConfigUtils.getBooleanFromConfig(var1, "isAutoAimEnabled", false));
       this.isUnlimitedCarry = ConfigUtils.getBooleanFromConfig(var1, "isUnlimitedCarry", false);
       this.isUnlimitedCondition = ConfigUtils.getBooleanFromConfig(var1, "isUnlimitedCondition", false);
       this.isUnlimitedEndurance = ConfigUtils.getBooleanFromConfig(var1, "isUnlimitedEndurance", false);
@@ -332,6 +370,9 @@ public class EtherAPI {
       this.isVisualDrawLineToVehicle = ConfigUtils.getBooleanFromConfig(var1, "isVisualDrawLineToVehicle", false);
       this.isVisualDrawLineToPlayers = ConfigUtils.getBooleanFromConfig(var1, "isVisualDrawLineToPlayers", false);
       this.isVisualEnable360Vision = ConfigUtils.getBooleanFromConfig(var1, "isVisualEnable360Vision", false);
+      this.isOverlayStatusEnable = ConfigUtils.getBooleanFromConfig(var1, "isOverlayStatusEnable", true);
+      this.isOverlayWeaponInfo = ConfigUtils.getBooleanFromConfig(var1, "isOverlayWeaponInfo", true);
+      this.isOverlayEntityCounts = ConfigUtils.getBooleanFromConfig(var1, "isOverlayEntityCounts", true);
       this.isMapDrawLocalPlayer = ConfigUtils.getBooleanFromConfig(var1, "isMapDrawLocalPlayer", true);
       this.isMapDrawAllPlayers = ConfigUtils.getBooleanFromConfig(var1, "isMapDrawAllPlayers", false);
       this.isMapDrawVehicles = ConfigUtils.getBooleanFromConfig(var1, "isMapDrawVehicles", false);
@@ -400,7 +441,6 @@ public class EtherAPI {
    private void updateLocalPlayerFeatures() {
       IsoPlayer var1 = IsoPlayer.getInstance();
       if (var1 != null) {
-         boolean extraInfoChanged = false;
          InventoryItem var2 = var1.getPrimaryHandItem();
          HandWeapon var3;
          if (this.isExtraDamage && var2 != null && (var2.getStringItemType().equals("RangedWeapon") || var2.getStringItemType().equals("MeleeWeapon")) && var2 instanceof HandWeapon) {
@@ -423,52 +463,19 @@ public class EtherAPI {
             SandboxOptions.instance.set("MultiHitZombies", this.isMultiHitZombies);
          }
 
-         if (var1.isTimedActionInstantCheat() != this.isTimedActionCheat) {
-            var1.setTimedActionInstantCheat(this.isTimedActionCheat);
-            extraInfoChanged = true;
-         }
+         LocalPlayerCheatController.applyCharacterCheats(
+                 var1,
+                 this.isTimedActionCheat,
+                 this.isEnableGodMode,
+                 this.isEnableNoclip,
+                 this.isEnableInvisible,
+                 this.isZombieDontAttack,
+                 this.isUnlimitedCarry,
+                 this.isUnlimitedEndurance,
+                 this.isUnlimitedAmmo);
 
          if (var1.isWearingNightVisionGoggles() != this.isEnableNightVision) {
             var1.setWearingNightVisionGoggles(this.isEnableNightVision);
-         }
-
-         if (var1.isGodMod() != this.isEnableGodMode) {
-            var1.setGodMod(this.isEnableGodMode);
-            extraInfoChanged = true;
-         }
-
-         if (var1.isNoClip() != this.isEnableNoclip) {
-            var1.setNoClip(this.isEnableNoclip);
-            extraInfoChanged = true;
-         }
-
-         if (var1.isInvisible() != this.isEnableInvisible) {
-            var1.setInvisible(this.isEnableInvisible);
-            extraInfoChanged = true;
-         }
-
-         if (var1.isZombiesDontAttack() != this.isZombieDontAttack) {
-            var1.setZombiesDontAttack(this.isZombieDontAttack);
-            extraInfoChanged = true;
-         }
-
-         if (var1.isUnlimitedCarry() != this.isUnlimitedCarry) {
-            var1.setUnlimitedCarry(this.isUnlimitedCarry);
-            extraInfoChanged = true;
-         }
-
-         if (var1.isUnlimitedEndurance() != this.isUnlimitedEndurance) {
-            var1.setUnlimitedEndurance(this.isUnlimitedEndurance);
-            extraInfoChanged = true;
-         }
-
-         if (var1.isUnlimitedAmmo() != this.isUnlimitedAmmo) {
-            var1.setUnlimitedAmmo(this.isUnlimitedAmmo);
-            extraInfoChanged = true;
-         }
-
-         if (extraInfoChanged && GameClient.client) {
-            GameClient.sendPlayerExtraInfo(var1);
          }
 
          if (this.isNoRecoil && var2 != null && var2.getStringItemType().equals("RangedWeapon") && var2 instanceof HandWeapon) {

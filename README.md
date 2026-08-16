@@ -1,5 +1,5 @@
-<h1 align="center">Project-Zomboid-EtherHack</h1>
-<img src="demo/EtherLogo.png" alt="EtherHack Logo">
+<h1 align="center">EtherTrainer</h1>
+<img src="demo/EtherLogo.png" alt="EtherTrainer Logo">
 <p align="center">
   <img src="https://img.shields.io/github/v/release/Yeet-Masta/Project-Zomboid-EtherHack" alt="GitHub release (latest by date)">
   <img src="https://img.shields.io/github/license/Yeet-Masta/Project-Zomboid-EtherHack" alt="GitHub">
@@ -15,7 +15,7 @@ I'm currecntly converting all the code to kotlin. I want to do this for several 
 There are repo's going around pretending to be EtherHack or just a PZ cheat (https://github.com/ayhantunay/Project-Zomboid-Cheat) and I HIGHLY ADVISE YOU DON"T DOWNLOAD THESE!!! They are asking you to download completely arbitrary DLL files and disable your fucking anti-virus!!! Please for the love of god, don't download this shit. Use your head!!!
 
 This is a cheat written in Java(API) and LUA(GUI) for Project Zomboid. It is aimed at providing the game with additional functionality that allows users to get some benefits. Please use responsibly and understand the consequences that may arise as a result of improper use.
-The B42 migration targets Project Zomboid `42.20.2` (Steam). The installer preserves the original B41 EtherHack architecture: it reads classes from `projectzomboid.jar`, emits loose `zombie/...` overrides, and extracts runtime resources under the game-root `EtherHack/` directory.
+The B42 migration targets Project Zomboid `42.20.2` (Steam). EtherTrainer reads classes from `projectzomboid.jar`, emits loose `zombie/...` overrides, and extracts runtime resources under the game-root `EtherHack/` directory.
 
 This branch does not create a standalone Mod, modify `projectzomboid.jar`, or implement a multiplayer legality detector. Server-side anti-cheat remains independent of the original client-side modification route.
 
@@ -104,21 +104,21 @@ This tool requires:
 gradlew.bat clean check jar -PpzHome="C:\\Steam\\steamapps\\common\\ProjectZomboid"
 ```
 
-3. Move the created `build/EtherHack-2.9.3.jar` to the root folder of the game
+3. Move the created `build/EtherTrainer-Re.1.0.0.jar` to the root folder of the game
 
 (For example, `c:\Steam\steamapps\common\ProjectZomboid`)
 
 4. Open a console in the game root and run:
 
 ```
-java -jar ./EtherHack-{yourVersion}.jar --install
+java -jar ./EtherTrainer-{yourVersion}.jar --install
 ```
 
-The generated filename is currently `EtherHack-2.9.3.jar`.
+The generated filename is currently `EtherTrainer-Re.1.0.0.jar`.
 ### Uninstallation
 Open the console in the root folder and run the following command:
 ```
-java -jar ./EtherHack-{yourVersion}.jar --uninstall
+java -jar ./EtherTrainer-{yourVersion}.jar --uninstall
 ```
 
 Use the same generated JAR filename for uninstallation.

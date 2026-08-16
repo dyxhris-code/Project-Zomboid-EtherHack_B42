@@ -30,11 +30,16 @@ public final class LuaCompatibilityTest {
         usesNativeB42ItemEditor();
         guardsVehicleLookup();
         usesServerAuthoritativeItemGrant();
-        syncsNativeAdminPowerFlags();
+        avoidsNativeAdminPowerSynchronization();
         guardsB42UiLifecycleState();
         guardsOptionalB42WorldSystems();
         usesNativeB42CenteredTextDrawing();
         rejectsRemovedInfoPanelAntiCheatStatus();
+        supportsResizableMainWindow();
+        anchorsSizeSensitivePanelContent();
+        guardsB42PlayerEditorProfileData();
+        usesB42CharacterTraitsApi();
+        labelsRoleIndependentTimedActions();
         usesQuietEnglishTranslationFallback();
         providesCurrentChineseTranslations();
         resolvesLuaRequires();
@@ -89,14 +94,14 @@ public final class LuaCompatibilityTest {
                 "Item grants must preserve the local single-player path");
     }
 
-    private static void syncsNativeAdminPowerFlags() throws IOException {
+    private static void avoidsNativeAdminPowerSynchronization() throws IOException {
         String source = read("components/panels/EtherCharacterPanel.lua");
-        require(source.contains("player:setBuildCheat(isChecked)"),
-                "Build cheat must update the B42 player admin-power flag");
-        require(source.contains("player:setFarmingCheat(isChecked)"),
-                "Farming cheat must update the B42 player admin-power flag");
-        require(source.contains("sendPlayerExtraInfo(player)"),
-                "B42 admin-power flag changes must be sent to the server");
+        require(source.contains("toggleBuildCheat(isChecked)"),
+                "Build cheat must use EtherHack's role-independent local toggle");
+        require(source.contains("toggleFarmingCheat(isChecked)"),
+                "Farming cheat must use EtherHack's role-independent local toggle");
+        require(!source.contains("sendPlayerExtraInfo(player)"),
+                "Local cheat toggles must not require server admin-power synchronization");
     }
 
     private static void guardsB42UiLifecycleState() throws IOException {
@@ -134,6 +139,95 @@ public final class LuaCompatibilityTest {
                         && !source.contains("getAntiCheat8Status")
                         && !source.contains("AntiCheatStatus"),
                 "EtherInfoPanel must not render the removed anti-cheat detection subsystem");
+    }
+
+    private static void supportsResizableMainWindow() throws IOException {
+        String menu = read("EtherHackMenu.lua");
+        require(menu.contains("require \"ISUI/ISResizeWidget\""),
+                "EtherHack menu must use the native B42 resize widget");
+        require(menu.contains("EtherMain.minimumWidth") && menu.contains("EtherMain.minimumHeight"),
+                "EtherHack menu must enforce usable minimum dimensions");
+        require(menu.contains("ISResizeWidget:new("),
+                "EtherHack menu must expose a bottom-right resize handle");
+        require(menu.contains("function EtherMain:resizeTo(width, height)"),
+                "EtherHack menu must centralize resize layout updates");
+        require(menu.contains("ISLayoutManager.RegisterWindow(\"EtherHackMain\""),
+                "EtherHack menu must persist its geometry through the B42 layout manager");
+
+        String buttons = read("components/ui/UIButtonsPanel.lua");
+        require(buttons.contains("panel:setAnchorRight(true)")
+                        && buttons.contains("panel:setAnchorBottom(true)"),
+                "The active EtherHack tab must follow main-window resizing");
+    }
+
+    private static void anchorsSizeSensitivePanelContent() throws IOException {
+        String itemCreator = read("components/panels/EtherItemCreator.lua");
+        require(itemCreator.contains("self.panel:setAnchorRight(true)")
+                        && itemCreator.contains("self.panel:setAnchorBottom(true)"),
+                "Item-creator tabs must grow with their panel");
+        String itemTables = read("components/ui/UIItemTables.lua");
+        require(itemTables.contains("self.datas:setAnchorRight(true)")
+                        && itemTables.contains("self.datas:setAnchorBottom(true)"),
+                "Item-creator lists must grow with their tab view");
+
+        String map = read("components/panels/EtherMapPanel.lua");
+        require(map.contains("self.map:setAnchorRight(true)")
+                        && map.contains("self.map:setAnchorBottom(true)"),
+                "The world map must grow with its panel");
+
+        String editor = read("components/panels/EtherPlayerEditor.lua");
+        require(editor.contains("self.traitsPanel:setAnchorRight(true)")
+                        && editor.contains("self.skillPanel:setAnchorRight(true)"),
+                "Player-editor tables must grow horizontally with their panel");
+        require(editor.contains("self:setScrollChildren(true)")
+                        && editor.contains("self:addScrollBars()"),
+                "The player editor must remain usable at the minimum window height");
+        String traits = read("components/ui/UITraitsTable.lua");
+        String skills = read("components/ui/UISkillTable.lua");
+        require(traits.contains("self.datas:setAnchorRight(true)")
+                        && skills.contains("self.datas:setAnchorRight(true)"),
+                "Player-editor list contents must grow with their table containers");
+    }
+
+    private static void guardsB42PlayerEditorProfileData() throws IOException {
+        String editor = read("components/panels/EtherPlayerEditor.lua");
+        require(editor.contains("local descriptor = self.localPlayer:getDescriptor()")
+                        && editor.contains("if descriptor ~= nil then"),
+                "Player editor must tolerate a temporarily unavailable multiplayer descriptor");
+        require(editor.contains("descriptor:getCharacterProfession()")
+                        && editor.contains("CharacterProfessionDefinition.getCharacterProfessionDefinition"),
+                "Player editor must use the B42 character-profession API");
+        require(!editor.contains(":getProfession()")
+                        && !editor.contains("ProfessionFactory.getProfession"),
+                "Player editor must not call the removed B41 profession API");
+    }
+
+    private static void usesB42CharacterTraitsApi() throws IOException {
+        String traitsTable = read("components/ui/UITraitsTable.lua");
+        require(traitsTable.contains("getCharacterTraits():getKnownTraits()")
+                        && traitsTable.contains("CharacterTraitDefinition.getCharacterTraitDefinition")
+                        && traitsTable.contains("getCharacterTraits():remove("),
+                "Traits table must use B42 character-traits accessors");
+        require(!traitsTable.contains("getTraits()") && !traitsTable.contains("TraitFactory"),
+                "Traits table must not call B41 trait APIs");
+
+        String modal = read("components/ui/UIModalAddTrait.lua");
+        require(modal.contains("CharacterTraitDefinition.getTraits()")
+                        && modal.contains("getCharacterTraits():get(")
+                        && modal.contains("getCharacterTraits():add("),
+                "Trait picker must use B42 character-traits definitions and mutations");
+        require(!modal.contains("self.localPlayer:getTraits()") && !modal.contains("TraitFactory"),
+                "Trait picker must not call B41 trait APIs");
+    }
+
+    private static void labelsRoleIndependentTimedActions() throws IOException {
+        Path translations = Path.of("src/main/resources/EtherHack/translations");
+        String chinese = Files.readString(translations.resolve("CN.txt"));
+        String english = Files.readString(translations.resolve("EN.txt"));
+        require(chinese.contains("UI_CharacterPanel_TimedActionCheat = \"动作瞬间完成\""),
+                "Chinese timed-action label must describe the role-independent feature");
+        require(english.contains("UI_CharacterPanel_TimedActionCheat = \"Instant timed actions\""),
+                "English timed-action label must describe the role-independent feature");
     }
 
     private static void usesQuietEnglishTranslationFallback() throws IOException {

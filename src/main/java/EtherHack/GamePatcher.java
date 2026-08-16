@@ -28,6 +28,7 @@ public class GamePatcher {
     */
    private final String[] patchClasses = new String[]{
            "zombie/GameWindow",
+           "zombie/characters/IsoPlayer",
            "zombie/inventory/ItemContainer",
            "zombie/Lua/LuaEventManager",
            "zombie/Lua/LuaManager"
@@ -247,6 +248,60 @@ public class GamePatcher {
       });
    }
 
+   public void patchIsoPlayerAim() {
+      Patch.injectIntoClass(
+              "zombie/characters/IsoPlayer",
+              "calculateAimVector",
+              "(Lzombie/iso/Vector2;)Lzombie/iso/Vector2;",
+              false,
+              (method) -> {
+                 List<AbstractInsnNode> returns = Arrays.stream(method.instructions.toArray())
+                         .filter(instruction -> instruction.getOpcode() == Opcodes.ARETURN)
+                         .toList();
+                 if (returns.size() != 1) {
+                    throw new IllegalStateException(
+                            "Expected one ARETURN in IsoPlayer.calculateAimVector, found " + returns.size());
+                 }
+
+                 int resultLocal = method.maxLocals++;
+                 InsnList adjustAimInstructions = new InsnList();
+                 adjustAimInstructions.add(new VarInsnNode(Opcodes.ASTORE, resultLocal));
+                 adjustAimInstructions.add(new VarInsnNode(Opcodes.ALOAD, 0));
+                 adjustAimInstructions.add(new VarInsnNode(Opcodes.ALOAD, resultLocal));
+                 adjustAimInstructions.add(new MethodInsnNode(
+                         Opcodes.INVOKESTATIC,
+                         "EtherHack/features/AutoAimController",
+                         "adjustAimVector",
+                         "(Lzombie/characters/IsoPlayer;Lzombie/iso/Vector2;)Lzombie/iso/Vector2;",
+                         false));
+                 method.instructions.insertBefore(returns.getFirst(), adjustAimInstructions);
+              });
+   }
+
+   public void patchIsoPlayerTimedAction() {
+      Patch.injectIntoClass(
+              "zombie/characters/IsoPlayer",
+              "isTimedActionInstant",
+              "()Z",
+              false,
+              (method) -> {
+                 LabelNode useNativeResult = new LabelNode();
+                 InsnList instantActionOverride = new InsnList();
+                 instantActionOverride.add(new VarInsnNode(Opcodes.ALOAD, 0));
+                 instantActionOverride.add(new MethodInsnNode(
+                         Opcodes.INVOKESTATIC,
+                         "EtherHack/features/LocalPlayerCheatController",
+                         "isTimedActionInstant",
+                         "(Lzombie/characters/IsoPlayer;)Z",
+                         false));
+                 instantActionOverride.add(new JumpInsnNode(Opcodes.IFEQ, useNativeResult));
+                 instantActionOverride.add(new InsnNode(Opcodes.ICONST_1));
+                 instantActionOverride.add(new InsnNode(Opcodes.IRETURN));
+                 instantActionOverride.add(useNativeResult);
+                 method.instructions.insert(instantActionOverride);
+              });
+   }
+
    /**
     * Внедрение в файл LuaEventManager
     */
@@ -326,6 +381,8 @@ public class GamePatcher {
       Logger.print("Preparation for injection into game file...");
 
       patchGameWindow();
+      patchIsoPlayerAim();
+      patchIsoPlayerTimedAction();
       patchItemContainer();
       patchLuaEventManager();
       patchLuaManager();

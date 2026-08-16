@@ -1,4 +1,5 @@
 require "ISUI/ISPanel"
+require "ISUI/ISComboBox"
 
 --*********************************************************
 --* Глобальные установки UI
@@ -10,7 +11,23 @@ EtherSettingsPanel = ISPanel:derive("EtherSettingsPanel"); -- Наследова
 --*********************************************************
 function EtherSettingsPanel:addLabel(posX, posY, title)
     local label = ISLabel:new(posX, posY + 3, getTextManager():getFontHeight(UIFont.Small), title, 1, 1, 1, 1, UIFont.Small, true)
+	label:setAnchorLeft(true)
+	label:setAnchorRight(false)
+	label:setAnchorTop(true)
+	label:setAnchorBottom(false)
 	self:addChild(label)
+    return label
+end
+
+function EtherSettingsPanel:addSection(title, posY)
+    local label = ISLabel:new(10, posY, getTextManager():getFontHeight(UIFont.Medium), title,
+        EtherMain.accentColor.r, EtherMain.accentColor.g, EtherMain.accentColor.b, 1, UIFont.Medium, true)
+    label:setAnchorLeft(true)
+    label:setAnchorRight(false)
+    label:setAnchorTop(true)
+    label:setAnchorBottom(false)
+    self:addChild(label)
+    self:setScrollHeight(math.max(self:getScrollHeight(), posY + label.height + 10))
     return label
 end
 
@@ -22,10 +39,10 @@ function EtherSettingsPanel:addButton(posX, posY, buttonTitle, onClick, isOnlyNo
     local button = UIButton:new(posX, posY, buttonWidth, buttonHeight, buttonTitle, onClick)
     button:initialise();
     button:instantiate();
-    button:setAnchorLeft(true);
-    button:setAnchorRight(false);
-    button:setAnchorTop(false);
-    button:setAnchorBottom(true);
+    button:setAnchorLeft(false);
+    button:setAnchorRight(true);
+    button:setAnchorTop(true);
+    button:setAnchorBottom(false);
     button.isOnlyNotInGame = isOnlyNotInGame;
     self:addChild(button);
     table.insert(self.buttonList, button);
@@ -39,6 +56,10 @@ function EtherSettingsPanel:addSlider(posX, posY, width, height, value, minValue
     local slider = UISlider:new(posX, posY, width, height, value, minValue, maxValue, method)
     slider:initialise();
     slider:instantiate();
+    slider:setAnchorLeft(false);
+    slider:setAnchorRight(true);
+    slider:setAnchorTop(true);
+    slider:setAnchorBottom(false);
     self:addChild(slider);
     return slider
 end
@@ -53,7 +74,7 @@ function EtherSettingsPanel:addButtonWithLabel(title, buttonTitle, func, isOnlyN
     self:addLabel(10, buttonY - 3, title)
     self:addButton(self:getWidth() - 130 - 10, buttonY, buttonTitle, func, isOnlyNotInGame)
 
-    self:setScrollHeight(self:getScrollHeight() + 21);
+    self:setScrollHeight(math.max(self:getScrollHeight(), buttonY + 30));
     self.rows = self.rows + 1;
 end
 
@@ -71,11 +92,15 @@ function EtherSettingsPanel:addColorPickerWithLabel(title, func, startColor)
     button:initialise();
     button.backgroundColor = {r = startColor:getR(), g = startColor:getG(), b = startColor:getB(), a = 1};
 	button.backgroundColorMouseOver = {r = startColor:getR(), g = startColor:getG(), b = startColor:getB(), a = 1};
+    button:setAnchorLeft(false);
+    button:setAnchorRight(true);
+    button:setAnchorTop(true);
+    button:setAnchorBottom(false);
 
     self:addChild(button);
     table.insert(self.buttonList, button);
 
-    self:setScrollHeight(self:getScrollHeight() + 24);
+    self:setScrollHeight(math.max(self:getScrollHeight(), buttonY + buttonHeight + 10));
     self.rows = self.rows + 1;
     return button
 end
@@ -102,19 +127,19 @@ end
 function EtherSettingsPanel:addCheckBox(title, method, isSelected, isOnlyInGame)
     local rows = self.rows;
     local checkboxX = 15;
-    local checkboxY = 10 + rows * 20;
+    local checkboxY = 10 + rows * 35;
 
     local checkbox = UICheckbox:new(checkboxX, checkboxY, title, isSelected, method);
     checkbox:initialise();
     checkbox:instantiate();
     checkbox:setAnchorLeft(true);
     checkbox:setAnchorRight(false);
-    checkbox:setAnchorTop(false);
-    checkbox:setAnchorBottom(true);
+    checkbox:setAnchorTop(true);
+    checkbox:setAnchorBottom(false);
     checkbox.isOnlyInGame = isOnlyInGame;
     self:addChild(checkbox);
 
-    self:setScrollHeight(self:getScrollHeight() + checkbox.height + 5);
+    self:setScrollHeight(math.max(self:getScrollHeight(), checkboxY + checkbox.height + 10));
 
     self.rows = self.rows + 1;
 
@@ -150,7 +175,8 @@ function EtherSettingsPanel:createChildren()
     self:setScrollHeight(0);
     self:addScrollBars();
 
-    self:addLabel(10, 10, getTranslate("UI_Settings_ConfigTitle"))
+    self:addSection(getTranslate("UI_SettingsSection_Profiles"), 10)
+    self:addLabel(10, 35, getTranslate("UI_Settings_ConfigTitle"))
     self.configs = ISScrollingListBox:new(10, 60, self.width - 20, 100);
     self.configs:initialise();
     self.configs:instantiate();
@@ -181,8 +207,8 @@ function EtherSettingsPanel:createChildren()
     saveButton:instantiate();
     saveButton:setAnchorLeft(true);
     saveButton:setAnchorRight(false);
-    saveButton:setAnchorTop(false);
-    saveButton:setAnchorBottom(true);
+    saveButton:setAnchorTop(true);
+    saveButton:setAnchorBottom(false);
     saveButton.update = function ()
         local text = self.entry:getText();
         if (text ~= "") then
@@ -194,52 +220,47 @@ function EtherSettingsPanel:createChildren()
     self:addChild(saveButton)
 
     local loadButton = UIButton:new(saveButton.x + saveButton.width + 10, saveButton.y, 80, 24, getTranslate("UI_Settings_ConfigLoad"), function ()
-        local configName = self.configs.items[self.configs.selected].item;
-        if (configName ~= nil) then
-            loadConfig(configName);
-            EtherMain.accentColor = {r = getAccentUIColor():getR(), g = getAccentUIColor():getG(), b = getAccentUIColor():getB(), a = 1.0};
+        local configName = self:getSelectedConfig()
+        if configName == nil then return end
+
+        loadConfig(configName);
+        EtherMain.accentColor = {r = getAccentUIColor():getR(), g = getAccentUIColor():getG(), b = getAccentUIColor():getB(), a = 1.0};
+        if self.itemGrantMode ~= nil then
+            self.itemGrantMode:setSelectedData(getItemGrantMode())
         end
     end)
     loadButton:initialise();
     loadButton:instantiate();
     loadButton:setAnchorLeft(true);
     loadButton:setAnchorRight(false);
-    loadButton:setAnchorTop(false);
-    loadButton:setAnchorBottom(true);
+    loadButton:setAnchorTop(true);
+    loadButton:setAnchorBottom(false);
     loadButton.update = function ()
-        local config = self.configs.items[self.configs.selected];
-        if (config ~= nil) then
-            loadButton.isEnable = true;
-        else
-            loadButton.isEnable = false;
-        end
+        loadButton.isEnable = self:getSelectedConfig() ~= nil
     end
 
     self:addChild(loadButton)
 
     local deleteButton = UIButton:new(loadButton.x + loadButton.width + 10, loadButton.y, 80, 24, getTranslate("UI_Settings_ConfigDelete"), function ()
-        local configName = self.configs.items[self.configs.selected].item;
-        if (configName ~= nil) then
-            deleteConfig(configName);
-            self:updateConfigsList();
-        end
+        local configName = self:getSelectedConfig()
+        if configName == nil then return end
+
+        deleteConfig(configName);
+        self:updateConfigsList();
     end)
     deleteButton:initialise();
     deleteButton:instantiate();
     deleteButton:setAnchorLeft(true);
     deleteButton:setAnchorRight(false);
-    deleteButton:setAnchorTop(false);
-    deleteButton:setAnchorBottom(true);
+    deleteButton:setAnchorTop(true);
+    deleteButton:setAnchorBottom(false);
     deleteButton.update = function ()
-        local config = self.configs.items[self.configs.selected];
-        if (config ~= nil) then
-            deleteButton.isEnable = true;
-        else
-            deleteButton.isEnable = false;
-        end
+        deleteButton.isEnable = self:getSelectedConfig() ~= nil
     end
     self:addChild(deleteButton)
 
+    self:addSection(getTranslate("UI_SettingsSection_Appearance"), 205)
+    self.rows = 1
     self.accentColor = self:addColorPickerWithLabel(getTranslate("UI_Settings_AccentColor"), function ()
         local picker = ISColorPicker:new(getMouseX(), getMouseY())
         picker:initialise()
@@ -293,6 +314,37 @@ function EtherSettingsPanel:createChildren()
         picker:addToUIManager();
     end, getZombieUIColor())
 
+    local grantModeY = 200 + self.rows * 25
+    self:addLabel(10, grantModeY - 3, getTranslate("UI_Settings_ItemGrantMode"))
+    self.itemGrantMode = ISComboBox:new(self:getWidth() - 300 - 10, grantModeY, 300, 24, self,
+        function(target, combo)
+            setItemGrantMode(combo:getSelectedData())
+        end)
+    self.itemGrantMode:initialise()
+    self.itemGrantMode:instantiate()
+    self.itemGrantMode:setAnchorLeft(false)
+    self.itemGrantMode:setAnchorRight(true)
+    self.itemGrantMode:setAnchorTop(true)
+    self.itemGrantMode:setAnchorBottom(false)
+    self.itemGrantMode:addOptionWithData(
+        getTranslate("UI_Settings_ItemGrantMode_LocalNative"),
+        "local-native",
+        getTranslate("UI_Settings_ItemGrantMode_LocalNative_Tooltip"))
+    self.itemGrantMode:addOptionWithData(
+        getTranslate("UI_Settings_ItemGrantMode_AdminCommand"),
+        "admin-command",
+        getTranslate("UI_Settings_ItemGrantMode_AdminCommand_Tooltip"))
+    self.itemGrantMode:addOptionWithData(
+        getTranslate("UI_Settings_ItemGrantMode_Automatic"),
+        "server-world-action",
+        getTranslate("UI_Settings_ItemGrantMode_Automatic_Tooltip"))
+    self.itemGrantMode:setSelectedData(getItemGrantMode())
+    self:addChild(self.itemGrantMode)
+    self.rows = self.rows + 1
+    self:setScrollHeight(math.max(self:getScrollHeight(), grantModeY + 34))
+
+    self:addSection(getTranslate("UI_SettingsSection_Maintenance"), 200 + self.rows * 25)
+    self.rows = self.rows + 1
     self:addButtonWithLabel(getTranslate("UI_Settings_ResetLuaLabel"), getTranslate("UI_Settings_ResetLuaButton"), function ()
         getCore():ResetLua("default", "Force")
     end, true);
@@ -314,7 +366,11 @@ function EtherSettingsPanel:updateConfigsList()
         local config = configList:get(i)
         self.configs:addItem("Config", config);
     end
-    self.configs.selected = self.lastSelectedIndex;
+    if #self.configs.items == 0 then
+        self.configs.selected = 0
+    else
+        self.configs.selected = math.min(math.max(self.lastSelectedIndex, 1), #self.configs.items)
+    end
 end
 
 --*********************************************************
@@ -378,9 +434,20 @@ function EtherSettingsPanel:new(posX, posY, width, height)
     menuTableData.localPlayer = getPlayer();
     self.__index = self;
 
-    self.checkBoxList = {}; -- Список всех чекбоксов
-    self.buttonList = {}; -- Список всех кнопок
-    self.rows = 0;
+    menuTableData.checkBoxList = {}; -- Список всех чекбоксов
+    menuTableData.buttonList = {}; -- Список всех кнопок
+    menuTableData.rows = 0;
 
     return menuTableData;
+end
+
+function EtherSettingsPanel:getSelectedConfig()
+    if self.configs == nil or self.configs.items == nil then return nil end
+
+    local selectedIndex = self.configs.selected or 0
+    if selectedIndex < 1 or selectedIndex > #self.configs.items then return nil end
+
+    local selectedConfig = self.configs.items[selectedIndex]
+    if selectedConfig == nil then return nil end
+    return selectedConfig.item
 end

@@ -5,31 +5,25 @@ require "ISUI/ISPanel"
 --*********************************************************
 EtherCharacterPanel = ISPanel:derive("EtherCharacterPanel"); -- Наследование от ISPanel
 
-local function syncEtherPlayerExtraInfo(player)
-    if isClient() and player ~= nil then
-        sendPlayerExtraInfo(player)
-    end
-end
-
 --*********************************************************
 --* Добавление чекбоксов
 --*********************************************************
 function EtherCharacterPanel:addCheckBox(title, method, isSelected, isOnlyInGame)
-    local checkBoxAmount = #self.checkBoxList;
     local checkboxX = 15;
-    local checkboxY = 10 + checkBoxAmount * 20;
+    local checkboxY = self.yRowPosition;
 
     local checkbox = UICheckbox:new(checkboxX, checkboxY, title, isSelected, method);
     checkbox:initialise();
     checkbox:instantiate();
     checkbox:setAnchorLeft(true);
     checkbox:setAnchorRight(false);
-    checkbox:setAnchorTop(false);
-    checkbox:setAnchorBottom(true);
+    checkbox:setAnchorTop(true);
+    checkbox:setAnchorBottom(false);
     checkbox.isOnlyInGame = isOnlyInGame;
     self:addChild(checkbox);
 
-    self:setScrollHeight(self:getScrollHeight() + checkbox.height + 5);
+    self.yRowPosition = checkboxY + checkbox.height + 5;
+    self:setScrollHeight(self.yRowPosition + 10);
 
     table.insert(self.checkBoxList, checkbox);
 end
@@ -64,66 +58,49 @@ function EtherCharacterPanel:createChildren()
     self:setScrollHeight(0)
     self:addScrollBars();
 
-    self:addCheckBox(getTranslate("UI_CharacterPanel_MultiHitZombies"), function(isChecked)
-        toggleMultiHitZombies(isChecked);
-    end, isMultiHitZombies(), false);
-
+    self:addSection(getTranslate("UI_CharacterSection_Protection"));
     self:addCheckBox(getTranslate("UI_CharacterPanel_ZombieDontAttack"), function(isChecked)
         toggleZombieDontAttack(isChecked);
     end, isZombieDontAttack(), false);
-
-    self:addCheckBox(getTranslate("UI_CharacterPanel_BuildCheat"), function(isChecked)
-        ISBuildMenu.cheat = isChecked;
-        local player = getPlayer()
-        if player ~= nil then
-            player:setBuildCheat(isChecked)
-            syncEtherPlayerExtraInfo(player)
-        end
-    end, ISBuildMenu.cheat, false);
-
-    self:addCheckBox(getTranslate("UI_CharacterPanel_FarmingCheat"), function(isChecked)
-        ISFarmingMenu.cheat = isChecked;
-        local player = getPlayer()
-        if player ~= nil then
-            player:setFarmingCheat(isChecked)
-            syncEtherPlayerExtraInfo(player)
-        end
-    end, ISFarmingMenu.cheat, false);
-
     self:addCheckBox(getTranslate("UI_CharacterPanel_GodMode"), function(isChecked)
         toggleGodMode(isChecked);
     end, isEnableGodMode(), false);
-
-    self:addCheckBox(getTranslate("UI_CharacterPanel_TimedActionCheat"), function(isChecked)
-        toggleTimedActionCheat(isChecked);
-    end, isTimedActionCheat(), false);
-
-    self:addCheckBox(getTranslate("UI_CharacterPanel_NoClip"), function(isChecked)
-        toggleNoclip(isChecked);
-    end, isEnableNoclip(), false);
-
     self:addCheckBox(getTranslate("UI_CharacterPanel_Invisible"), function(isChecked)
         toggleInvisible(isChecked);
     end, isEnableInvisible(), false);
-
     self:addCheckBox(getTranslate("UI_CharacterPanel_NightVision"), function(isChecked)
         toggleNightVision(isChecked);
     end, isEnableNightVision(), false);
 
+    self:addSection(getTranslate("UI_CharacterSection_Movement"));
+    self:addCheckBox(getTranslate("UI_CharacterPanel_TimedActionCheat"), function(isChecked)
+        toggleTimedActionCheat(isChecked);
+    end, isTimedActionCheat(), false);
+    self:addCheckBox(getTranslate("UI_CharacterPanel_NoClip"), function(isChecked)
+        toggleNoclip(isChecked);
+    end, isEnableNoclip(), false);
+    self:addCheckBox(getTranslate("UI_CharacterPanel_BuildCheat"), function(isChecked)
+        ISBuildMenu.cheat = isChecked;
+        toggleBuildCheat(isChecked);
+    end, isBuildCheatEnabled(), false);
+    self:addCheckBox(getTranslate("UI_CharacterPanel_FarmingCheat"), function(isChecked)
+        ISFarmingMenu.cheat = isChecked;
+        toggleFarmingCheat(isChecked);
+    end, isFarmingCheatEnabled(), false);
+    self:addCheckBox(getTranslate("UI_CharacterPanel_UnlimitedEndurance"), function(isChecked)
+        toggleUnlimitedEndurance(isChecked);
+    end, isUnlimitedEndurance(), false);
+
+    self:addSection(getTranslate("UI_CharacterSection_Combat"));
+    self:addCheckBox(getTranslate("UI_CharacterPanel_MultiHitZombies"), function(isChecked)
+        toggleMultiHitZombies(isChecked);
+    end, isMultiHitZombies(), false);
     self:addCheckBox(getTranslate("UI_CharacterPanel_InstantKill"), function(isChecked)
         toggleExtraDamage(isChecked);
         if(not isChecked) then
             resetWeaponsStats()
         end
     end, isExtraDamage(), false);
-
-    self:addCheckBox(getTranslate("UI_CharacterPanel_UnlimitedCarry"), function(isChecked)
-        toggleEnableUnlimitedCarry(isChecked);
-    end, isEnableUnlimitedCarry(), false);
-
-    self:addCheckBox(getTranslate("UI_CharacterPanel_UnlimitedEndurance"), function(isChecked)
-        toggleUnlimitedEndurance(isChecked);
-    end, isUnlimitedEndurance(), false);
 
     self:addCheckBox(getTranslate("UI_CharacterPanel_UnlimitedAmmo"), function(isChecked)
         toggleUnlimitedAmmo(isChecked);
@@ -133,14 +110,23 @@ function EtherCharacterPanel:createChildren()
         toggleUnlimitedCondition(isChecked);
     end, isUnlimitedCondition(), false);
 
-    self:addCheckBox(getTranslate("UI_CharacterPanel_AutoRepairsItems"), function(isChecked)
-        toggleAutoRepairItems(isChecked);
-    end, isAutoRepairItems(), false);
-
     self:addCheckBox(getTranslate("UI_CharacterPanel_DisableRecoil"), function(isChecked)
         toggleNoRecoil(isChecked)
     end, isNoRecoil(), false);
 
+    self:addCheckBox(getTranslate("UI_CharacterPanel_AutoAim"), function(isChecked)
+        toggleAutoAim(isChecked)
+    end, isAutoAimEnabled(), false);
+
+    self:addSection(getTranslate("UI_CharacterSection_Inventory"));
+    self:addCheckBox(getTranslate("UI_CharacterPanel_UnlimitedCarry"), function(isChecked)
+        toggleEnableUnlimitedCarry(isChecked);
+    end, isEnableUnlimitedCarry(), false);
+    self:addCheckBox(getTranslate("UI_CharacterPanel_AutoRepairsItems"), function(isChecked)
+        toggleAutoRepairItems(isChecked);
+    end, isAutoRepairItems(), false);
+
+    self:addSection(getTranslate("UI_CharacterSection_Needs"));
     self:addCheckBox(getTranslate("UI_CharacterPanel_DisableFatigue"), function(isChecked)
         toggleDisableFatigue(isChecked);
     end, isDisableFatigue(), false);
@@ -255,7 +241,25 @@ function EtherCharacterPanel:new(posX, posY, width, height)
     menuTableData.localPlayer = getPlayer();
     self.__index = self;
 
-    self.checkBoxList = {}; -- Список всех чекбоксов
+    menuTableData.checkBoxList = {}; -- Список всех чекбоксов
+    menuTableData.yRowPosition = 10;
 
     return menuTableData;
+end
+
+function EtherCharacterPanel:addSection(title)
+    if self.yRowPosition > 10 then
+        self.yRowPosition = self.yRowPosition + 10;
+    end
+
+    local label = ISLabel:new(15, self.yRowPosition, getTextManager():getFontHeight(UIFont.Medium), title,
+        EtherMain.accentColor.r, EtherMain.accentColor.g, EtherMain.accentColor.b, 1, UIFont.Medium, true);
+    label:setAnchorLeft(true);
+    label:setAnchorRight(false);
+    label:setAnchorTop(true);
+    label:setAnchorBottom(false);
+    self:addChild(label);
+
+    self.yRowPosition = self.yRowPosition + label.height + 8;
+    self:setScrollHeight(self.yRowPosition + 10);
 end

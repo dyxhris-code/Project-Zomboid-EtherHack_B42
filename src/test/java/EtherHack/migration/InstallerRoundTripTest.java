@@ -23,6 +23,7 @@ public final class InstallerRoundTripTest {
     private static final String INJECTED_DESCRIPTOR = "LEtherHack/annotations/Injected;";
     private static final List<String> PATCHED_CLASSES = List.of(
             "zombie/GameWindow.class",
+            "zombie/characters/IsoPlayer.class",
             "zombie/inventory/ItemContainer.class",
             "zombie/Lua/LuaEventManager.class",
             "zombie/Lua/LuaManager.class");

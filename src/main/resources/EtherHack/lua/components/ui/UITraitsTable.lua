@@ -7,6 +7,22 @@ UITraitsTable = ISPanel:derive("UITraitsTable");
 
 local fontHeightSmall = getTextManager():getFontHeight(UIFont.Small)
 
+local function setButtonEnabled(button, enabled)
+    if button.setEnabled then
+        button:setEnabled(enabled)
+    else
+        button:setEnable(enabled)
+    end
+end
+
+function UITraitsTable:getSelectedTrait()
+    if self.datas == nil or self.datas.selected == nil or self.datas.selected < 1 then return nil end
+
+    local selectedRow = self.datas.items[self.datas.selected]
+    if selectedRow == nil then return nil end
+    return selectedRow.item
+end
+
 --*********************************************************
 --* Создание дочерних элементов
 --*********************************************************
@@ -16,6 +32,10 @@ function UITraitsTable:createChildren()
     self.datas = ISScrollingListBox:new(0, 0, self.width, self.height - 90);
     self.datas:initialise();
     self.datas:instantiate();
+    self.datas:setAnchorLeft(true);
+    self.datas:setAnchorRight(true);
+    self.datas:setAnchorTop(true);
+    self.datas:setAnchorBottom(true);
     self.datas.itemheight = fontHeightSmall + 4 * 2
     self.datas.selected = 0;
     self.datas.joypadParent = self;
@@ -30,6 +50,7 @@ function UITraitsTable:createChildren()
 
     self.addTrait = UIButton:new(0, self.height - 80, 100, 24, getTranslate("UI_PlayerEditor_PlayerTraits_AddTrait"), 
     function() 
+        if self.localPlayer == nil or self.localPlayer:isDead() then return end
         if UIModalAddTrait.instance then
             UIModalAddTrait.instance:close()
         end
@@ -51,7 +72,11 @@ function UITraitsTable:createChildren()
 
     self.deleteTrait = UIButton:new(self.addTrait.x + self.addTrait.width + 10, self.height - 80, 100, 24, getTranslate("UI_PlayerEditor_PlayerTraits_DeleteTrait"), 
     function() 
-        self.localPlayer:getTraits():remove(self.datas.items[self.datas.selected].item:getType());
+        local selectedTrait = self:getSelectedTrait()
+        if self.localPlayer == nil or selectedTrait == nil then return end
+        local traitType = selectedTrait:getType();
+        self.localPlayer:getCharacterTraits():remove(traitType);
+        self.localPlayer:modifyTraitXPBoost(traitType, true);
         SyncXp(self.localPlayer);
         self:updateTraits();
     end)
@@ -67,6 +92,7 @@ function UITraitsTable:createChildren()
     table.insert(self.buttonList, self.deleteTrait);
 
     self:updateTraits();
+    self:update();
 end
 
 --*********************************************************
@@ -76,15 +102,18 @@ function UITraitsTable:updateTraits()
     self.lastSelectedIndex = self.datas.selected or 0;
     self.datas:clear();
 
-    for i=0, self.localPlayer:getTraits():size() - 1 do
-        local trait = TraitFactory.getTrait(self.localPlayer:getTraits():get(i));
+    if self.localPlayer == nil then return end
+
+    local traits = self.localPlayer:getCharacterTraits():getKnownTraits()
+    for i=0, traits:size() - 1 do
+        local trait = CharacterTraitDefinition.getCharacterTraitDefinition(traits:get(i));
         if trait ~= nil then
             if trait:getTexture() then
                 self.datas:addItem(trait:getLabel(), trait);
             end
         end
     end
-    self.datas.selected = self.lastSelectedIndex;
+    self.datas.selected = math.min(self.lastSelectedIndex, #self.datas.items);
 end
 
 --*********************************************************
@@ -92,16 +121,13 @@ end
 --*********************************************************
 function UITraitsTable:update()
     self.datas.doDrawItem = self.drawDatas;
+    local playerAvailable = self.localPlayer ~= nil and not self.localPlayer:isDead()
+    local hasSelection = self:getSelectedTrait() ~= nil
     for i=1, #self.buttonList do
-        local item = self.buttonList[i];
-        if item.isOnlyInGame and self.localPlayer == nil or self.localPlayer:isDead() then
-            item:setEnable(false);
-        end
-        if (not self.datas.items[self.datas.selected] or #self.datas.items < 1) and item.isRequireSelected then
-            item:setEnable(false);
-        else
-            item:setEnable(true);
-        end
+        local button = self.buttonList[i];
+        local enabled = (not button.isOnlyInGame or playerAvailable)
+            and (not button.isRequireSelected or hasSelection)
+        setButtonEnabled(button, enabled)
     end
 end
 

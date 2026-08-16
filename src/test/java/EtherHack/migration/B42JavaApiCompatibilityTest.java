@@ -12,6 +12,7 @@ public final class B42JavaApiCompatibilityTest {
     public static void main(String[] args) throws Exception {
         verifiesGameplayApiMigration();
         verifiesLogoAndUiMigration();
+        verifiesProductBranding();
         verifiesLoggingMigration();
         verifiesScreenCoordinateMigration();
     }
@@ -35,10 +36,10 @@ public final class B42JavaApiCompatibilityTest {
                 "Multiplayer body-stat changes must use the B42 stat bit mask");
         require(source.contains("INetworkPacket.send(PacketTypes.PacketType.SyncPlayerStats"),
                 "Multiplayer body-stat changes must be sent to the authoritative server");
-        require(source.contains("GameClient.sendPlayerExtraInfo(var1);"),
-                "B42 admin-power flags must be sent to the authoritative server");
-        require(source.contains("var1.setUnlimitedEndurance(this.isUnlimitedEndurance);"),
-                "Unlimited endurance must use the native B42 admin-power flag");
+        require(source.contains("LocalPlayerCheatController.applyCharacterCheats("),
+                "Character cheats must bypass B42 capability-checked admin setters locally");
+        require(!source.contains("GameClient.sendPlayerExtraInfo(var1);"),
+                "Local character cheats must not depend on server admin-power synchronization");
         require(source.contains("this.isDisableFear || this.isDisablePanic"),
                 "Fear and panic must have one explicit B42 PANIC policy");
         require(source.contains("CharacterStat.PANIC"),
@@ -80,6 +81,20 @@ public final class B42JavaApiCompatibilityTest {
                 "Logger must retain a startup-safe console fallback");
         require(!source.contains("DebugLog.General"),
                 "Removed B41 DebugLog.General access remains");
+    }
+
+    private static void verifiesProductBranding() throws Exception {
+        String info = read("utils/Info.java");
+        String credits = read("Ether/EtherCredits.java");
+
+        require(info.contains("CHEAT_NAME = \"EtherTrainer\""),
+                "Visible product name must be EtherTrainer");
+        require(info.contains("CHEAT_TAG = \"[EtherTrainer]: \""),
+                "Log watermark must use the EtherTrainer tag");
+        require(credits.contains("Info.CHEAT_CREDITS_TITLE"),
+                "On-screen watermark must use the centralized product title");
+        require(credits.contains("Info.CHEAT_CREDITS_AUTHOR"),
+                "On-screen watermark must use centralized credits metadata");
     }
 
     private static void verifiesScreenCoordinateMigration() throws Exception {

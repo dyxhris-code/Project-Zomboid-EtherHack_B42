@@ -29,6 +29,8 @@ end
 --* Обработка событий колесика мыши
 --*********************************************************
 function EtherMapPanel:onMouseWheel(del)
+	if self.map == nil then return false end
+
 	self:setYScroll(self:getYScroll() - (del * 40));
 
     if self:getMouseX() > 10 and self:getMouseY() > 10 and self:getMouseX() < self.map.width + 10 and self:getMouseY() < self.map.height + 10 then
@@ -78,8 +80,8 @@ function EtherMapPanel:addButton(posX, posY, buttonTitle, onClick)
     local button = UIButton:new(posX, posY, buttonWidth, buttonHeight, buttonTitle, onClick)
     button:initialise();
     button:instantiate();
-    button:setAnchorLeft(true);
-    button:setAnchorRight(false);
+    button:setAnchorLeft(false);
+    button:setAnchorRight(true);
     button:setAnchorTop(false);
     button:setAnchorBottom(true);
     self:addChild(button);
@@ -117,6 +119,10 @@ function EtherMapPanel:createChildren()
     self.map = UIMap:new(10, 10, self.width - 20, self.height - 200)
     self.map:initialise()
     self.map:instantiate()
+    self.map:setAnchorLeft(true)
+    self.map:setAnchorRight(true)
+    self.map:setAnchorTop(true)
+    self.map:setAnchorBottom(true)
     self.map:initDataAndStyle()
     self.map.mapAPI:resetView()
     self.map:restoreSettings()

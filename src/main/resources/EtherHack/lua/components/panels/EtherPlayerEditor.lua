@@ -64,6 +64,9 @@ end
 --*********************************************************
 function EtherPlayerEditor:createChildren()
     ISPanel.createChildren(self);
+    self:setScrollChildren(true);
+    self:setScrollHeight(0);
+    self:addScrollBars();
 
     if self.localPlayer == nil then return end;
 
@@ -75,16 +78,35 @@ function EtherPlayerEditor:createChildren()
 	self.avatarPanel:setIsometric(false)
 	self:addChild(self.avatarPanel)
 
-    self:addLabel(getText("IGUI_PlayerStats_Username") .. " ".. self.localPlayer:getUsername(), 90, 10);
-    self:addLabel(getText("IGUI_PlayerStats_DisplayName").. " ".. self.localPlayer:getDisplayName(), 90, 30);
-    self:addLabel(getText("UI_characreation_forename").. ": " .. self.localPlayer:getDescriptor():getForename(), 90, 50);
-    self:addLabel(getText("UI_characreation_surname").. ": " .. self.localPlayer:getDescriptor():getSurname(), 90, 70);
-    local professionName = self.localPlayer:getDescriptor():getProfession()
-    local profession = ProfessionFactory.getProfession(professionName)
-    if profession ~= nil then
-        professionName = profession:getName()
+    local username = tostring(self.localPlayer:getUsername() or "")
+    local descriptor = self.localPlayer:getDescriptor()
+    local displayName = username
+    local forename = ""
+    local surname = ""
+    local professionName = ""
+
+    if descriptor ~= nil then
+        forename = tostring(descriptor:getForename() or "")
+        surname = tostring(descriptor:getSurname() or "")
+        local characterProfession = descriptor:getCharacterProfession()
+        local profession = CharacterProfessionDefinition.getCharacterProfessionDefinition(characterProfession)
+        if profession ~= nil then
+            professionName = tostring(profession:getUIName() or "")
+        elseif characterProfession ~= nil then
+            professionName = tostring(characterProfession)
+        end
+
+        local fullName = forename .. " " .. surname
+        if fullName ~= " " then
+            displayName = fullName
+        end
     end
-    self:addLabel(getText("IGUI_PlayerStats_Profession").. " ".. tostring(professionName or ""), 90, 90);
+
+    self:addLabel(getText("IGUI_PlayerStats_Username") .. " " .. username, 90, 10);
+    self:addLabel(getText("IGUI_PlayerStats_DisplayName") .. " " .. displayName, 90, 30);
+    self:addLabel(getText("UI_characreation_forename") .. ": " .. forename, 90, 50);
+    self:addLabel(getText("UI_characreation_surname") .. ": " .. surname, 90, 70);
+    self:addLabel(getText("IGUI_PlayerStats_Profession") .. " " .. professionName, 90, 90);
     -- self:addLabel(getText("IGUI_char_Survived_For").. ": " .. self.localPlayer:getTimeSurvived(), 90, 110);
     self:addLabel(getText("IGUI_char_Survived_For").. ": " .. self.localPlayer:getTimeSurvived(), 90, 110);
     local editTimeBtn = ISButton:new(250, 110, 60, 18, getTranslate("UI_PlayerEditor_EditStats"), self, self.onEditTimeButton)
@@ -112,6 +134,8 @@ function EtherPlayerEditor:createChildren()
 
     self.traitsPanel = UITraitsTable:new(10, 195, self.width - 10 * 2, 180);
     self.traitsPanel:initialise();
+    self.traitsPanel:setAnchorLeft(true);
+    self.traitsPanel:setAnchorRight(true);
     self.traitsPanel.parent = self;
     self:addChild(self.traitsPanel);
 
@@ -119,8 +143,11 @@ function EtherPlayerEditor:createChildren()
 
     self.skillPanel = UISkillTable:new(10, self.traitsPanel.x + self.traitsPanel.height + 180, self.width - 10 * 2, 180);
     self.skillPanel:initialise();
+    self.skillPanel:setAnchorLeft(true);
+    self.skillPanel:setAnchorRight(true);
     self.skillPanel.parent = self;
     self:addChild(self.skillPanel);
+    self:setScrollHeight(self.skillPanel.y + self.skillPanel.height + 20);
 end
 
 function EtherPlayerEditor:updateLabels()

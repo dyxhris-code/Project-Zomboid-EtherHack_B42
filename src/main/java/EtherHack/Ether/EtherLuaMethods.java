@@ -1,5 +1,6 @@
 package EtherHack.Ether;
 
+import EtherHack.features.LocalPlayerCheatController;
 import EtherHack.utils.Logger;
 import EtherHack.utils.PlayerUtils;
 import java.io.BufferedInputStream;
@@ -19,8 +20,11 @@ import zombie.core.Color;
 import zombie.core.network.ByteBufferWriter;
 import zombie.core.textures.Texture;
 import zombie.inventory.InventoryItem;
+import zombie.inventory.InventoryItemFactory;
+import zombie.inventory.types.HandWeapon;
 import zombie.network.GameClient;
 import zombie.network.PacketTypes;
+import zombie.network.packets.AddExplosiveTrapPacket;
 import zombie.network.packets.character.PlayerPacket;
 import zombie.scripting.ScriptManager;
 import zombie.scripting.objects.Recipe;
@@ -262,6 +266,66 @@ public class EtherLuaMethods {
 
    }
 
+   private static final String[] ITEM_GRANT_PALLET_TYPES = {
+           "Base.Hammer",
+           "Base.RollingPin",
+           "Base.Saucepan",
+           "Base.Fork"
+   };
+   private static final int ITEM_GRANT_PALLET_MARKER = 0x505C;
+
+   @LuaMethod(name = "createItemGrantPallet", global = true)
+   public static KahluaTable createItemGrantPallet(IsoPlayer player) {
+      if (player == null || player.getCurrentSquare() == null || !GameClient.client) {
+         return null;
+      }
+
+      try {
+         HandWeapon carrier = findSafeItemGrantPallet();
+         if (carrier == null) {
+            return null;
+         }
+
+         carrier.setRemoteControlID(ITEM_GRANT_PALLET_MARKER);
+         AddExplosiveTrapPacket packet = new AddExplosiveTrapPacket();
+         packet.set(carrier, player, player.getCurrentSquare());
+         packet.sendToServer(PacketTypes.PacketType.AddExplosiveTrap);
+
+         KahluaTable result = LuaManager.platform.newTable();
+         result.rawset("carrierId", (double)carrier.getID());
+         result.rawset("carrierType", carrier.getFullType());
+         result.rawset("marker", (double)ITEM_GRANT_PALLET_MARKER);
+         return result;
+      } catch (Exception e) {
+         Logger.printLog("Error creating item-grant pallet: " + e.getMessage());
+         return null;
+      }
+   }
+
+   private static HandWeapon findSafeItemGrantPallet() {
+      for (String itemType : ITEM_GRANT_PALLET_TYPES) {
+         InventoryItem item = InventoryItemFactory.CreateItem(itemType);
+         if (item instanceof HandWeapon carrier && hasNoWorldEffects(carrier)) {
+            return carrier;
+         }
+      }
+      return null;
+   }
+
+   private static boolean hasNoWorldEffects(HandWeapon carrier) {
+      return carrier.getExplosionRange() <= 0
+              && carrier.getExplosionPower() <= 0
+              && carrier.getFireRange() <= 0
+              && carrier.getFireStartingEnergy() <= 0
+              && carrier.getFireStartingChance() <= 0
+              && carrier.getSmokeRange() <= 0
+              && carrier.getNoiseRange() <= 0
+              && carrier.getSensorRange() <= 0
+              && carrier.getExplosionTimer() <= 0
+              && carrier.getExplosionDuration() <= 0
+              && carrier.getTriggerExplosionTimer() <= 0;
+   }
+
    @LuaMethod(
       name = "getDistanceBetweenPlayers",
       global = true
@@ -414,6 +478,32 @@ public class EtherLuaMethods {
       EtherMain.getInstance().etherAPI.isNoRecoil = var0;
    }
 
+   @LuaMethod(name = "getItemGrantMode", global = true)
+   public static String getItemGrantMode() {
+      return EtherAPI.normalizeItemGrantMode(EtherMain.getInstance().etherAPI.itemGrantMode);
+   }
+
+   @LuaMethod(name = "setItemGrantMode", global = true)
+   public static void setItemGrantMode(String mode) {
+      EtherMain.getInstance().etherAPI.itemGrantMode = EtherAPI.normalizeItemGrantMode(mode);
+   }
+
+   @LuaMethod(
+      name = "isAutoAimEnabled",
+      global = true
+   )
+   public static boolean isAutoAimEnabled() {
+      return EtherMain.getInstance().etherAPI.autoAim.isEnabled();
+   }
+
+   @LuaMethod(
+      name = "toggleAutoAim",
+      global = true
+   )
+   public static void toggleAutoAim(boolean enabled) {
+      EtherMain.getInstance().etherAPI.autoAim.setEnabled(enabled);
+   }
+
    @LuaMethod(
       name = "isAutoRepairItems",
       global = true
@@ -471,6 +561,38 @@ public class EtherLuaMethods {
    }
 
    @LuaMethod(
+      name = "isBuildCheatEnabled",
+      global = true
+   )
+   public static boolean isBuildCheatEnabled() {
+      return LocalPlayerCheatController.isBuildCheatEnabled();
+   }
+
+   @LuaMethod(
+      name = "toggleBuildCheat",
+      global = true
+   )
+   public static void toggleBuildCheat(boolean enabled) {
+      LocalPlayerCheatController.setBuildCheatEnabled(enabled);
+   }
+
+   @LuaMethod(
+      name = "isFarmingCheatEnabled",
+      global = true
+   )
+   public static boolean isFarmingCheatEnabled() {
+      return LocalPlayerCheatController.isFarmingCheatEnabled();
+   }
+
+   @LuaMethod(
+      name = "toggleFarmingCheat",
+      global = true
+   )
+   public static void toggleFarmingCheat(boolean enabled) {
+      LocalPlayerCheatController.setFarmingCheatEnabled(enabled);
+   }
+
+   @LuaMethod(
       name = "isMultiHitZombies",
       global = true
    )
@@ -516,6 +638,54 @@ public class EtherLuaMethods {
    )
    public static void toggleVisualEnable360Vision(boolean var0) {
       EtherMain.getInstance().etherAPI.isVisualEnable360Vision = var0;
+   }
+
+   @LuaMethod(
+      name = "isOverlayStatusEnable",
+      global = true
+   )
+   public static boolean isOverlayStatusEnable() {
+      return EtherMain.getInstance().etherAPI.isOverlayStatusEnable;
+   }
+
+   @LuaMethod(
+      name = "toggleOverlayStatus",
+      global = true
+   )
+   public static void toggleOverlayStatus(boolean enabled) {
+      EtherMain.getInstance().etherAPI.isOverlayStatusEnable = enabled;
+   }
+
+   @LuaMethod(
+      name = "isOverlayWeaponInfo",
+      global = true
+   )
+   public static boolean isOverlayWeaponInfo() {
+      return EtherMain.getInstance().etherAPI.isOverlayWeaponInfo;
+   }
+
+   @LuaMethod(
+      name = "toggleOverlayWeaponInfo",
+      global = true
+   )
+   public static void toggleOverlayWeaponInfo(boolean enabled) {
+      EtherMain.getInstance().etherAPI.isOverlayWeaponInfo = enabled;
+   }
+
+   @LuaMethod(
+      name = "isOverlayEntityCounts",
+      global = true
+   )
+   public static boolean isOverlayEntityCounts() {
+      return EtherMain.getInstance().etherAPI.isOverlayEntityCounts;
+   }
+
+   @LuaMethod(
+      name = "toggleOverlayEntityCounts",
+      global = true
+   )
+   public static void toggleOverlayEntityCounts(boolean enabled) {
+      EtherMain.getInstance().etherAPI.isOverlayEntityCounts = enabled;
    }
 
    @LuaMethod(

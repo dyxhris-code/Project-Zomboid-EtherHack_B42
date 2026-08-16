@@ -33,23 +33,17 @@ end
 --* Добавление чекбоксов
 --*********************************************************
 function EtherVisualsPanel:addCheckBox(title, method, isSelected)
-    local yOffset = 5;
-    if #self.uiElements == 0 then
-        yOffset = 0;
-    end
-
-    local checkbox = UICheckbox:new(10, self.yRowPosition + yOffset, title, isSelected, method);
+    local checkbox = UICheckbox:new(15, self.yRowPosition, title, isSelected, method);
     checkbox:initialise();
     checkbox:instantiate();
     checkbox:setAnchorLeft(true);
     checkbox:setAnchorRight(false);
-    checkbox:setAnchorTop(false);
-    checkbox:setAnchorBottom(true);
+    checkbox:setAnchorTop(true);
+    checkbox:setAnchorBottom(false);
     self:addChild(checkbox);
 
-    self:setScrollHeight(self:getScrollHeight() + checkbox.height + 5);
-
-    self.yRowPosition = self.yRowPosition + checkbox.height + yOffset;
+    self.yRowPosition = self.yRowPosition + checkbox.height + 5;
+    self:setScrollHeight(self.yRowPosition + 10);
 
     table.insert(self.uiElements, checkbox);
 end
@@ -59,6 +53,10 @@ end
 --*********************************************************
 function EtherVisualsPanel:addLabel(posX, posY, title)
     local label = ISLabel:new(posX, posY + 3, getTextManager():getFontHeight(UIFont.Small), title, 1, 1, 1, 1, UIFont.Small, true)
+	label:setAnchorLeft(true)
+	label:setAnchorRight(false)
+	label:setAnchorTop(true)
+	label:setAnchorBottom(false)
 	self:addChild(label)
     return label
 end
@@ -70,6 +68,10 @@ function EtherVisualsPanel:addSlider(posX, posY, width, height, value, minValue,
     local slider = UISlider:new(posX, posY, width, height, value, minValue, maxValue, method)
     slider:initialise();
     slider:instantiate();
+    slider:setAnchorLeft(false);
+    slider:setAnchorRight(true);
+    slider:setAnchorTop(true);
+    slider:setAnchorBottom(false);
     self:addChild(slider);
     return slider
 end
@@ -108,6 +110,7 @@ function EtherVisualsPanel:createChildren()
     self:setScrollHeight(0);
     self:addScrollBars();
 
+    self:addSection(getTranslate("UI_VisualsSection_Global"));
     self:addCheckBox(getTranslate("UI_VisualsPanel_DrawCheatCredits"), function(isChecked)
         toggleVisualDrawCredits(isChecked);
     end, isVisualDrawCredits());
@@ -120,8 +123,7 @@ function EtherVisualsPanel:createChildren()
         toggleVisualEnable360Vision(isChecked);
     end, isVisualEnable360Vision());
 
-
-
+    self:addSection(getTranslate("UI_VisualsSection_Entities"));
     self:addCheckBox(getTranslate("UI_VisualsPanel_IsVisualsVehiclesEnable"), function(isChecked)
         toggleVisualsVehiclesEnable(isChecked);
     end, isVisualsVehiclesEnable());
@@ -142,6 +144,7 @@ function EtherVisualsPanel:createChildren()
         toggleVisualsPlayersEnable(isChecked);
     end, isVisualsPlayersEnable());
 
+    self:addSection(getTranslate("UI_VisualsSection_Labels"));
     self:addCheckBox(getTranslate("UI_VisualsPanel_DrawToLocalPlayer"), function(isChecked)
         toggleVisualDrawToLocalPlayer(isChecked);
     end, isVisualDrawToLocalPlayer());
@@ -173,7 +176,24 @@ function EtherVisualsPanel:new(posX, posY, width, height)
     menuTableData.yRowPosition = 10;
     self.__index = self;
 
-    self.uiElements = {}; -- Список всех элементов
+    menuTableData.uiElements = {}; -- Список всех элементов
 
     return menuTableData;
+end
+
+function EtherVisualsPanel:addSection(title)
+    if self.yRowPosition > 10 then
+        self.yRowPosition = self.yRowPosition + 10;
+    end
+
+    local label = ISLabel:new(15, self.yRowPosition, getTextManager():getFontHeight(UIFont.Medium), title,
+        EtherMain.accentColor.r, EtherMain.accentColor.g, EtherMain.accentColor.b, 1, UIFont.Medium, true);
+    label:setAnchorLeft(true);
+    label:setAnchorRight(false);
+    label:setAnchorTop(true);
+    label:setAnchorBottom(false);
+    self:addChild(label);
+
+    self.yRowPosition = self.yRowPosition + label.height + 8;
+    self:setScrollHeight(self.yRowPosition + 10);
 end

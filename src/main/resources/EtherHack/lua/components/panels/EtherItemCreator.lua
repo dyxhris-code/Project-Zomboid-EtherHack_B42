@@ -35,6 +35,10 @@ function EtherItemCreator:createChildren()
 
     self.panel = ISTabPanel:new(15, 10, self.width - 15 * 2, self.height - 30);
     self.panel:initialise();
+    self.panel:setAnchorLeft(true);
+    self.panel:setAnchorRight(true);
+    self.panel:setAnchorTop(true);
+    self.panel:setAnchorBottom(true);
     self.panel.borderColor = { r = 0, g = 0, b = 0, a = 0};
     self.panel.target = self;
     self.panel.equalTabWidth = false
@@ -68,6 +72,10 @@ function EtherItemCreator:initList()
 
     local listBox = UIItemTables:new(0, 0, self.panel.width, self.panel.height - self.panel.tabHeight);
     listBox:initialise();
+    listBox:setAnchorLeft(true);
+    listBox:setAnchorRight(true);
+    listBox:setAnchorTop(true);
+    listBox:setAnchorBottom(true);
     self.panel:addView("All", listBox);
     listBox:initList(allItems);
 
@@ -75,6 +83,10 @@ function EtherItemCreator:initList()
         if moduleName ~= "Moveables" then
             local categoryTable = UIItemTables:new(0, 0, self.panel.width, self.panel.height - self.panel.tabHeight);
             categoryTable:initialise();
+            categoryTable:setAnchorLeft(true);
+            categoryTable:setAnchorRight(true);
+            categoryTable:setAnchorTop(true);
+            categoryTable:setAnchorBottom(true);
             self.panel:addView(moduleName, categoryTable);
             categoryTable:initList(self.module[moduleName]);
         end

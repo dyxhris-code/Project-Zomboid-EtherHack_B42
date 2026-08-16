@@ -7,6 +7,22 @@ UISkillTable = ISPanel:derive("UISkillTable");
 
 local fontHeightSmall = getTextManager():getFontHeight(UIFont.Small)
 
+local function setButtonEnabled(button, enabled)
+    if button.setEnabled then
+        button:setEnabled(enabled)
+    else
+        button:setEnable(enabled)
+    end
+end
+
+function UISkillTable:getSelectedSkill()
+    if self.datas == nil or self.datas.selected == nil or self.datas.selected < 1 then return nil end
+
+    local selectedRow = self.datas.items[self.datas.selected]
+    if selectedRow == nil then return nil end
+    return selectedRow.item
+end
+
 --*********************************************************
 --* Создание дочерних элементов
 --*********************************************************
@@ -16,6 +32,10 @@ function UISkillTable:createChildren()
     self.datas = ISScrollingListBox:new(0, 0, self.width, self.height - 90);
     self.datas:initialise();
     self.datas:instantiate();
+    self.datas:setAnchorLeft(true);
+    self.datas:setAnchorRight(true);
+    self.datas:setAnchorTop(true);
+    self.datas:setAnchorBottom(true);
     self.datas.itemheight = fontHeightSmall + 4 * 2
     self.datas.selected = 0;
     self.datas.joypadParent = self;
@@ -31,6 +51,7 @@ function UISkillTable:createChildren()
 
     self.addXP = UIButton:new(0, self.height - 80, 100, 24, getTranslate("UI_PlayerEditor_PlayerSkills_AddXP"), 
     function() 
+        if self.localPlayer == nil or self.localPlayer:isDead() then return end
         if UIModalAddXP.instance then
             UIModalAddXP.instance:close()
         end
@@ -45,16 +66,19 @@ function UISkillTable:createChildren()
     self.addXP:setAnchorRight(false);
     self.addXP:setAnchorTop(false);
     self.addXP:setAnchorBottom(true);
+    self.addXP.isOnlyInGame = true;
     self:addChild(self.addXP);
+    table.insert(self.buttonList, self.addXP);
 
     self.addLevel = UIButton:new(self.addXP.x + self.addXP.width + 10, self.height - 80, 100, 24, getTranslate("UI_PlayerEditor_PlayerSkills_AddLevel"), 
     function() 
-        local selectedItem = self.datas.items[self.datas.selected].item
+        local selectedItem = self:getSelectedSkill()
+        if self.localPlayer == nil or selectedItem == nil then return end
         self.localPlayer:LevelPerk(selectedItem.perk);
         self.localPlayer:getXp():setXPToLevel(selectedItem.perk, self.localPlayer:getPerkLevel(selectedItem.perk));
         SyncXp(self.localPlayer)
         self:updateSkills();
-        if selectedItem.perk == Perks.Strength or selectedItem.perk == Perks.Fitness then
+        if self.parent.traitsPanel and (selectedItem.perk == Perks.Strength or selectedItem.perk == Perks.Fitness) then
             self.parent.traitsPanel:updateTraits();
         end
     end)
@@ -71,12 +95,13 @@ function UISkillTable:createChildren()
 
     self.takeLevel = UIButton:new(self.addLevel.x + self.addLevel.width + 10, self.height - 80, 100, 24, getTranslate("UI_PlayerEditor_PlayerSkills_TakeLevel"), 
     function() 
-        local selectedItem = self.datas.items[self.datas.selected].item
+        local selectedItem = self:getSelectedSkill()
+        if self.localPlayer == nil or selectedItem == nil then return end
         self.localPlayer:LoseLevel(selectedItem.perk);
         self.localPlayer:getXp():setXPToLevel(selectedItem.perk, self.localPlayer:getPerkLevel(selectedItem.perk));
         SyncXp(self.localPlayer)
         self:updateSkills();
-        if selectedItem.perk == Perks.Strength or selectedItem.perk == Perks.Fitness then
+        if self.parent.traitsPanel and (selectedItem.perk == Perks.Strength or selectedItem.perk == Perks.Fitness) then
             self.parent.traitsPanel:updateTraits();
         end
     end)
@@ -93,6 +118,7 @@ function UISkillTable:createChildren()
     
     self.maxSkill = UIButton:new(self.takeLevel.x + self.takeLevel.width + 10, self.height - 80, 100, 24, getTranslate("UI_PlayerEditor_PlayerSkills_MaxAllSkills"), 
     function() 
+        if self.localPlayer == nil or self.localPlayer:isDead() then return end
          for i=0, Perks.getMaxIndex() - 1 do
             local perk = PerkFactory.getPerk(Perks.fromIndex(i));
             if perk and perk:getParent() ~= Perks.None then
@@ -103,7 +129,7 @@ function UISkillTable:createChildren()
                 end
             end
         end
-        self.parent.traitsPanel:updateTraits();
+        if self.parent.traitsPanel then self.parent.traitsPanel:updateTraits() end
         self:updateSkills();
     end)
     self.maxSkill:initialise();
@@ -112,9 +138,12 @@ function UISkillTable:createChildren()
     self.maxSkill:setAnchorRight(false);
     self.maxSkill:setAnchorTop(false);
     self.maxSkill:setAnchorBottom(true);
+    self.maxSkill.isOnlyInGame = true;
     self:addChild(self.maxSkill);
+    table.insert(self.buttonList, self.maxSkill);
 
     self:updateSkills();
+    self:update();
 end
 
 --*********************************************************
@@ -123,6 +152,11 @@ end
 function UISkillTable:updateSkills()
     self.lastSelectedIndex = self.datas.selected or 0;
     self.datas:clear();
+
+    if self.localPlayer == nil then
+        self.datas.selected = 0
+        return
+    end
 
     for i=0, Perks.getMaxIndex() - 1 do
         local perk = PerkFactory.getPerk(Perks.fromIndex(i));
@@ -150,7 +184,7 @@ function UISkillTable:updateSkills()
             end
         end
     end
-    self.datas.selected = self.lastSelectedIndex;
+    self.datas.selected = math.min(self.lastSelectedIndex, #self.datas.items);
 end
 
 --*********************************************************
@@ -158,16 +192,13 @@ end
 --*********************************************************
 function UISkillTable:update()
     self.datas.doDrawItem = self.drawDatas;
+    local playerAvailable = self.localPlayer ~= nil and not self.localPlayer:isDead()
+    local hasSelection = self:getSelectedSkill() ~= nil
     for i=1, #self.buttonList do
-        local item = self.buttonList[i];
-        if item.isOnlyInGame and self.localPlayer == nil or self.localPlayer:isDead() then
-            item:setEnable(false);
-        end
-        if (not self.datas.items[self.datas.selected] or #self.datas.items < 1) and item.isRequireSelected then
-            item:setEnable(false);
-        else
-            item:setEnable(true);
-        end
+        local button = self.buttonList[i];
+        local enabled = (not button.isOnlyInGame or playerAvailable)
+            and (not button.isRequireSelected or hasSelection)
+        setButtonEnabled(button, enabled)
     end
 end
 

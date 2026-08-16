@@ -5,5 +5,5 @@ pluginManagement {
     }
 }
 
-rootProject.name = "EtherHack"
+rootProject.name = "EtherTrainer"
 

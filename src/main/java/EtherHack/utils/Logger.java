@@ -5,11 +5,11 @@ import zombie.debug.DebugType;
 
 public class Logger {
    public static void print(String var0) {
-      System.out.println("[EtherHack]: " + var0);
+      System.out.println(Info.CHEAT_TAG + var0);
    }
 
    public static void printLog(String var0) {
-      String message = "[EtherHack]: " + var0;
+      String message = Info.CHEAT_TAG + var0;
       try {
          DebugLog.log(DebugType.General, message);
       } catch (Throwable ignored) {
