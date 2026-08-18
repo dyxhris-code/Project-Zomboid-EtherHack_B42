@@ -4,6 +4,7 @@ import EtherHack.features.AutoAimTargetSelectorTest;
 import EtherHack.features.AutoAimIntegrationTest;
 import EtherHack.features.LocalCheatIntegrationTest;
 import EtherHack.features.ItemGrantRoutingTest;
+import EtherHack.features.MediaXpIntegrationTest;
 import EtherHack.features.OverlayIntegrationTest;
 import EtherHack.ui.LuaUiArchitectureTest;
 
@@ -21,6 +22,7 @@ public final class MigrationTestSuite {
         AutoAimIntegrationTest.main(new String[0]);
         LocalCheatIntegrationTest.main(new String[0]);
         ItemGrantRoutingTest.main(new String[0]);
+        MediaXpIntegrationTest.main(new String[0]);
         OverlayIntegrationTest.main(new String[0]);
         LuaUiArchitectureTest.main(new String[0]);
         InstallerRoundTripTest.main(args);

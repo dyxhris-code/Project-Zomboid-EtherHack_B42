@@ -89,13 +89,13 @@ fun classMajor(zip: ZipFile, entryName: String): Int {
 tasks.register("verifyPzEnvironment") {
     doLast {
         if (JavaVersion.current().majorVersion != "25") {
-            throw GradleException("B42.20.2 requires JDK 25; Gradle is running on Java ${JavaVersion.current().majorVersion}")
+            throw GradleException("Project Zomboid $expectedPzVersion requires JDK 25; Gradle is running on Java ${JavaVersion.current().majorVersion}")
         }
         if (!pzJar.isFile) {
-            throw GradleException("Missing B42.20.2 projectzomboid.jar. Set PZ_HOME or pass -PpzHome=<Project Zomboid directory>")
+            throw GradleException("Missing Project Zomboid $expectedPzVersion projectzomboid.jar. Set PZ_HOME or pass -PpzHome=<Project Zomboid directory>")
         }
         if (sha256(pzJar) != expectedPzSha256) {
-            throw GradleException("Unsupported Project Zomboid build: ${pzJar.absolutePath} (expected B42.20.2 SHA-256 $expectedPzSha256)")
+            throw GradleException("Unsupported Project Zomboid build: ${pzJar.absolutePath} (expected Project Zomboid $expectedPzVersion SHA-256 $expectedPzSha256)")
         }
         ZipFile(pzJar).use { zip ->
             requiredPzEntries.forEach { entry ->

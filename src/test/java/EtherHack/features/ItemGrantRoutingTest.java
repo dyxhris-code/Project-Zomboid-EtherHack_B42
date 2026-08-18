@@ -78,6 +78,15 @@ public final class ItemGrantRoutingTest {
                 "Lua must request and track the disposable server pallet");
         require(items.contains("ISTakeBricks:new(player, pallet, pallet:getSquare(), nil, itemType, count)"),
                 "The returned server object must be passed as a disposable pallet with target type and count");
+        require(items.contains("if not grantItemThroughServerWorldAction(player, itemType, count) then")
+                        && items.contains("giveItem(itemType, count)"),
+                "The server-world route must fall back safely when no server connection exists");
+        require(!items.contains("next(pendingServerGrants)"),
+                "The server-world route must not depend on the optional Lua next global");
+        require(items.contains("type(createItemGrantPallet) ~= \"function\""),
+                "The server-world route must not call an unavailable Lua bridge in single-player");
+        require(methods.contains("GameClient.connection == null"),
+                "The pallet packet must not be sent without a live client connection");
     }
 
     private static void removesTheServerExtensionPackage() throws IOException {

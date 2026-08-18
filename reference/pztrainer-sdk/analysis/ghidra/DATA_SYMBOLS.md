@@ -1,0 +1,41 @@
+# Semantic data symbols
+
+| Address | Name | Module | Confidence | Summary |
+| --- | --- | --- | --- | --- |
+| `0x1800ffc70` | `pendingGrantState` | item-grant | high | Disposable pallet request state: idle, waiting for object, or waiting for inventory write. |
+| `0x1800ffc78` | `requestedItemType` | item-grant | high | MSVC string containing the requested Project Zomboid item type. |
+| `0x1800ffc98` | `selectedCarrierType` | item-grant | high | MSVC string containing the selected effect-free carrier type. |
+| `0x1800ffcb8` | `requestedItemAmount` | item-grant | high | Requested item count after clamping to the supported range. |
+| `0x1800ffcbc` | `carrierItemId` | item-grant | high | Client-side carrier item ID used for preferred returned-object matching. |
+| `0x1800ffcc0` | `nextGrantPollAt` | item-grant | high | Steady-clock time point for the next state-machine poll. |
+| `0x1800ffcc8` | `grantDeadline` | item-grant | high | Steady-clock deadline for the current pallet request phase. |
+| `0x1800ffcd0` | `grantStatusMessage` | item-grant | high | MSVC string containing the current user-facing route status. |
+| `0x180101930` | `palletGrantBridgeInitialized` | item-grant | high | Initialization guard for the disposable pallet JNI bridge. |
+| `0x180101938` | `classInventoryItemFactory` | item-grant | high | Global JNI class reference for InventoryItemFactory. |
+| `0x180101940` | `classInventoryItem` | item-grant | high | Global JNI class reference for InventoryItem. |
+| `0x180101948` | `classHandWeapon` | item-grant | high | Global JNI class reference for HandWeapon. |
+| `0x180101950` | `classJavaObject` | item-grant | high | Global JNI class reference for java.lang.Object. |
+| `0x180101958` | `classIsoTrap` | item-grant | high | Global JNI class reference for IsoTrap. |
+| `0x180101960` | `classJavaList` | item-grant | high | Global JNI class reference for java.util.List. |
+| `0x180101968` | `classJavaDouble` | item-grant | high | Global JNI class reference for java.lang.Double. |
+| `0x180101970` | `classAddExplosiveTrapPacket` | item-grant | high | Global JNI class reference for AddExplosiveTrapPacket. |
+| `0x180101978` | `classNetTimedActionPacket` | item-grant | high | Global JNI class reference for NetTimedActionPacket. |
+| `0x180101980` | `classPacketType` | item-grant | high | Global JNI class reference for PacketTypes.PacketType. |
+| `0x180101988` | `fieldPacketTypeAddExplosiveTrap` | item-grant | high | Static field ID for PacketType.AddExplosiveTrap. |
+| `0x180101990` | `methodCreateInventoryItem` | item-grant | high | Static method ID for InventoryItemFactory.CreateItem(String). |
+| `0x180101998` | `methodGetItemId` | item-grant | high | Method ID for InventoryItem.getID(). |
+| `0x1801019a0` | `methodGetFullItemType` | item-grant | high | Method ID for InventoryItem.getFullType(). |
+| `0x1801019a8` | `methodSetRemoteControlId` | item-grant | high | Method ID for HandWeapon.setRemoteControlID(int). |
+| `0x1801019b0` | `methodGetRemoteControlId` | item-grant | high | Method ID for HandWeapon.getRemoteControlID(). |
+| `0x1801019b8` | `methodGetExplosionRange` | item-grant | high | Method ID for HandWeapon.getExplosionRange(). |
+| `0x1801019c0` | `methodGetExplosionPower` | item-grant | high | Method ID for HandWeapon.getExplosionPower(). |
+| `0x1801019c8` | `methodGetFireRange` | item-grant | high | Method ID for HandWeapon.getFireRange(). |
+| `0x1801019d0` | `methodGetFireStartingEnergy` | item-grant | high | Method ID for HandWeapon.getFireStartingEnergy(). |
+| `0x1801019d8` | `methodGetFireStartingChance` | item-grant | high | Method ID for HandWeapon.getFireStartingChance(). |
+| `0x1801019e0` | `methodGetSmokeRange` | item-grant | high | Method ID for HandWeapon.getSmokeRange(). |
+| `0x1801019e8` | `methodGetNoiseRange` | item-grant | high | Method ID for HandWeapon.getNoiseRange(). |
+| `0x1801019f0` | `methodGetSensorRange` | item-grant | high | Method ID for HandWeapon.getSensorRange(). |
+| `0x1801019f8` | `methodListSize` | item-grant | high | Method ID for java.util.List.size(). |
+| `0x180101a00` | `methodListGet` | item-grant | high | Method ID for java.util.List.get(int). |
+| `0x180101a08` | `methodIsoTrapGetItem` | item-grant | high | Method ID for IsoTrap.getItem(). |
+| `0x180101a10` | `methodDoubleValueOf` | item-grant | high | Static method ID for Double.valueOf(double). |

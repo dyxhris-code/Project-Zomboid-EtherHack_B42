@@ -1,115 +1,142 @@
 require "ISUI/ISPanel"
 
---*********************************************************
---* Глобальные установки UI
---*********************************************************
-EtherItemCreator = ISPanel:derive("EtherItemCreator"); -- Наследование от ISPanel
+EtherItemCreator = ISPanel:derive("EtherItemCreator")
 
---*********************************************************
---* Обработка prerender
---*********************************************************
-function EtherItemCreator:prerender()
-    self:setStencilRect(0,10,self:getWidth(),self:getHeight() - 20);
-    ISPanel.prerender(self);
+local function sortedKeys(map)
+    local keys = {}
+    for key, _ in pairs(map) do table.insert(keys, key) end
+    table.sort(keys, function(a, b) return a < b end)
+    return keys
 end
 
---*********************************************************
---* Обработка render
---*********************************************************
-function EtherItemCreator:render()
-    ISPanel.render(self);
-    self:clearStencilRect();
-
-    if self.localPlayer == nil then 
-        self:drawTextCentre(self.workInGameText, self.width / 2, self.height / 2, 1.0, 1.0, 1.0, 1.0, UIFont.Large)
-    end;
+local function setupIndexList(list, target, callback)
+    list:initialise()
+    list:instantiate()
+    list.itemheight = getTextManager():getFontHeight(UIFont.Small) + 10
+    list.font = UIFont.Small
+    list.selected = 0
+    list.drawBorder = true
+    list.target = target
+    list.onmousedown = callback
 end
 
---*********************************************************
---* Создание дочерних элементов
---*********************************************************
 function EtherItemCreator:createChildren()
-    ISPanel.createChildren(self);
+    ISPanel.createChildren(self)
+    if self.localPlayer == nil then return end
 
-    if self.localPlayer == nil then return end;
+    self.moduleTitle = ISLabel:new(0, 0, 24, getTranslate("UI_ItemCreator_Modules"), 1, 1, 1, 1, UIFont.Small, true)
+    self.moduleTitle:initialise(); self:addChild(self.moduleTitle)
+    self.categoryTitle = ISLabel:new(0, 0, 24, getTranslate("UI_ItemCreator_Categories"), 1, 1, 1, 1, UIFont.Small, true)
+    self.categoryTitle:initialise(); self:addChild(self.categoryTitle)
+    self.itemTitle = ISLabel:new(0, 0, 24, getTranslate("UI_Navigation_Items"), 1, 1, 1, 1, UIFont.Small, true)
+    self.itemTitle:initialise(); self:addChild(self.itemTitle)
 
-    self.panel = ISTabPanel:new(15, 10, self.width - 15 * 2, self.height - 30);
-    self.panel:initialise();
-    self.panel:setAnchorLeft(true);
-    self.panel:setAnchorRight(true);
-    self.panel:setAnchorTop(true);
-    self.panel:setAnchorBottom(true);
-    self.panel.borderColor = { r = 0, g = 0, b = 0, a = 0};
-    self.panel.target = self;
-    self.panel.equalTabWidth = false
-    self:addChild(self.panel);
+    self.moduleList = ISScrollingListBox:new(0, 0, 120, 100)
+    setupIndexList(self.moduleList, self, EtherItemCreator.onModuleSelected)
+    self:addChild(self.moduleList)
 
-    self:initList();
+    self.categoryList = ISScrollingListBox:new(0, 0, 150, 100)
+    setupIndexList(self.categoryList, self, EtherItemCreator.onCategorySelected)
+    self:addChild(self.categoryList)
+
+    self.itemTable = UIItemTables:new(0, 0, 300, 100)
+    self.itemTable:initialise()
+    self:addChild(self.itemTable)
+
+    self:loadItems()
+    self:populateModules()
+    self:layoutChildren()
 end
 
---*********************************************************
---* Инициализация таблиц с предметами
---*********************************************************
-function EtherItemCreator:initList()
-    self.items = getAllItems();
-    self.module = {};
-
-    local moduleNames = {}
-    local allItems = {}
-    for i=0,self.items:size()-1 do
-        local item = self.items:get(i);
-        if not item:getObsolete() and not item:isHidden() then
-            if not self.module[item:getModuleName()] then
-                self.module[item:getModuleName()] = {}
-                table.insert(moduleNames, item:getModuleName())
-            end
-            table.insert(self.module[item:getModuleName()], item);
-            table.insert(allItems, item)
+function EtherItemCreator:loadItems()
+    self.itemsByModule = {}
+    local allItems = getAllItems()
+    for i = 0, allItems:size() - 1 do
+        local item = allItems:get(i)
+        if not item:getObsolete() and not item:isHidden() and item:getModuleName() ~= "Moveables" then
+            local moduleName = item:getModuleName()
+            local categoryName = item:getDisplayCategory() or getTranslate("UI_ItemCreator_Other")
+            self.itemsByModule[moduleName] = self.itemsByModule[moduleName] or {}
+            self.itemsByModule[moduleName][categoryName] = self.itemsByModule[moduleName][categoryName] or {}
+            table.insert(self.itemsByModule[moduleName][categoryName], item)
         end
     end
-
-    table.sort(moduleNames, function(a,b) return not string.sort(a, b) end)
-
-    local listBox = UIItemTables:new(0, 0, self.panel.width, self.panel.height - self.panel.tabHeight);
-    listBox:initialise();
-    listBox:setAnchorLeft(true);
-    listBox:setAnchorRight(true);
-    listBox:setAnchorTop(true);
-    listBox:setAnchorBottom(true);
-    self.panel:addView("All", listBox);
-    listBox:initList(allItems);
-
-    for _,moduleName in ipairs(moduleNames) do
-        if moduleName ~= "Moveables" then
-            local categoryTable = UIItemTables:new(0, 0, self.panel.width, self.panel.height - self.panel.tabHeight);
-            categoryTable:initialise();
-            categoryTable:setAnchorLeft(true);
-            categoryTable:setAnchorRight(true);
-            categoryTable:setAnchorTop(true);
-            categoryTable:setAnchorBottom(true);
-            self.panel:addView(moduleName, categoryTable);
-            categoryTable:initList(self.module[moduleName]);
-        end
-    end
-
-    self.panel:activateView("All");
 end
 
---*********************************************************
---* Создание нового экземпляра меню
---*********************************************************
+function EtherItemCreator:populateModules()
+    self.moduleList:clear()
+    for _, moduleName in ipairs(sortedKeys(self.itemsByModule)) do
+        self.moduleList:addItem(moduleName, {name = moduleName})
+    end
+    if #self.moduleList.items > 0 then
+        self.moduleList.selected = 1
+        self:onModuleSelected(self.moduleList.items[1].item)
+    end
+end
+
+function EtherItemCreator:onModuleSelected(moduleEntry)
+    if moduleEntry == nil then return end
+    self.selectedModule = moduleEntry.name
+    self.categoryList:clear()
+    for _, categoryName in ipairs(sortedKeys(self.itemsByModule[self.selectedModule])) do
+        self.categoryList:addItem(categoryName, {name = categoryName})
+    end
+    if #self.categoryList.items > 0 then
+        self.categoryList.selected = 1
+        self:onCategorySelected(self.categoryList.items[1].item)
+    else
+        self.itemTable:initList({})
+    end
+end
+
+function EtherItemCreator:onCategorySelected(categoryEntry)
+    if categoryEntry == nil or self.selectedModule == nil then return end
+    self.selectedCategory = categoryEntry.name
+    self.itemTable:initList(self.itemsByModule[self.selectedModule][self.selectedCategory])
+end
+
+function EtherItemCreator:layoutChildren()
+    if self.moduleList == nil then return end
+    local gap = 8
+    local titleHeight = 24
+    local contentHeight = math.max(100, self.height - titleHeight - gap)
+    local moduleWidth = math.max(150, math.min(220, math.floor(self.width * 0.22)))
+    local categoryWidth = math.max(180, math.min(250, math.floor(self.width * 0.24)))
+    local itemX = moduleWidth + categoryWidth + gap * 2
+    local itemWidth = math.max(360, self.width - itemX)
+
+    self.moduleTitle:setX(0); self.moduleTitle:setY(0)
+    self.categoryTitle:setX(moduleWidth + gap); self.categoryTitle:setY(0)
+    self.itemTitle:setX(itemX); self.itemTitle:setY(0)
+
+    self.moduleList:setX(0); self.moduleList:setY(titleHeight)
+    self.moduleList:setWidth(moduleWidth); self.moduleList:setHeight(contentHeight)
+    self.categoryList:setX(moduleWidth + gap); self.categoryList:setY(titleHeight)
+    self.categoryList:setWidth(categoryWidth); self.categoryList:setHeight(contentHeight)
+    self.itemTable:setX(itemX); self.itemTable:setY(titleHeight)
+    self.itemTable:setWidth(itemWidth); self.itemTable:setHeight(contentHeight)
+    self.itemTable:onResize()
+end
+
+function EtherItemCreator:onResize(width, height)
+    ISPanel.onResize(self, width, height)
+    self:layoutChildren()
+end
+
+function EtherItemCreator:render()
+    ISPanel.render(self)
+    if self.localPlayer == nil then
+        self:drawTextCentre(self.workInGameText, self.width / 2, self.height / 2, 1, 1, 1, 1, UIFont.Large)
+    end
+end
+
 function EtherItemCreator:new(posX, posY, width, height)
-    local menuTableData = {};
-
-    menuTableData = ISPanel:new(posX, posY, width, height);
-    setmetatable(menuTableData, self);
-    menuTableData.background = true;
-	menuTableData.backgroundColor = {r=0.0, g=0.0, b=0.0, a=0.0};
-	menuTableData.borderColor = {r=0.0, g=0.0, b=0.0, a=0.0};
-    menuTableData.moveWithMouse = true;
-    menuTableData.workInGameText = getTranslate("UI_ItemCreator_PanelWorkOnlyInGame");
-    menuTableData.localPlayer = getPlayer();
-    self.__index = self;
-
-    return menuTableData;
+    local panel = ISPanel:new(posX, posY, width, height)
+    setmetatable(panel, self)
+    self.__index = self
+    panel.background = false
+    panel.moveWithMouse = false
+    panel.workInGameText = getTranslate("UI_ItemCreator_PanelWorkOnlyInGame")
+    panel.localPlayer = getPlayer()
+    return panel
 end

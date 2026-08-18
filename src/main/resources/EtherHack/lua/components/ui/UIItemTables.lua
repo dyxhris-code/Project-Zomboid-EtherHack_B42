@@ -46,13 +46,15 @@ end
 Events.OnObjectAdded.Add(onServerGrantObjectAdded)
 
 local function grantItemThroughServerWorldAction(player, itemType, count)
-    if next(pendingServerGrants) ~= nil then return end
+    for _ in pairs(pendingServerGrants) do
+        return true
+    end
 
     local square = player:getCurrentSquare()
-    if square == nil then return end
+    if square == nil then return false end
 
     local pallet = createItemGrantPallet(player)
-    if pallet == nil or pallet.carrierId == nil or pallet.carrierType == nil then return end
+    if pallet == nil or pallet.carrierId == nil or pallet.carrierType == nil then return false end
 
     pendingServerGrants[pallet.carrierId] = {
         carrierId = pallet.carrierId,
@@ -64,6 +66,7 @@ local function grantItemThroughServerWorldAction(player, itemType, count)
         square = square,
         ticks = 0
     }
+    return true
 end
 
 local function scanPendingServerGrants(player)
@@ -109,7 +112,13 @@ local function giveEtherItem(itemType, count)
         end
 
         if mode == ITEM_GRANT_MODE_SERVER_WORLD_ACTION then
-            grantItemThroughServerWorldAction(player, itemType, count)
+            if type(createItemGrantPallet) ~= "function" then
+                giveItem(itemType, count)
+                return
+            end
+            if not grantItemThroughServerWorldAction(player, itemType, count) then
+                giveItem(itemType, count)
+            end
             return
         end
 
@@ -134,10 +143,27 @@ function UIItemTables:onResize()
     ISPanel.onResize(self);
     if self.filterByName == nil or self.filterById == nil then return end;
 
-    local halfWidth = self.width / 2;
+    local halfWidth = math.floor(self.width / 2);
+    local listHeight = math.max(80, self.height - 150)
+    local actionY = self.height - 80
+    local labelY = self.height - 40
+    local filterY = self.height - 20
+    local gap = 6
+    local buttonWidth = math.floor((self.width - gap * 3) / 4)
+
+    self.datas:setWidth(self.width)
+    self.datas:setHeight(listHeight)
+    self.addItemX1:setX(0); self.addItemX1:setY(actionY); self.addItemX1:setWidth(buttonWidth)
+    self.addItemX2:setX(buttonWidth + gap); self.addItemX2:setY(actionY); self.addItemX2:setWidth(buttonWidth)
+    self.addItemX5:setX((buttonWidth + gap) * 2); self.addItemX5:setY(actionY); self.addItemX5:setWidth(buttonWidth)
+    self.addItemX10:setX((buttonWidth + gap) * 3); self.addItemX10:setY(actionY); self.addItemX10:setWidth(buttonWidth)
+    self.filterByNameTitle:setY(labelY)
     self.filterByName:setWidth(halfWidth - 10);
+    self.filterByName:setY(filterY)
     self.filterByIdTitle:setX(halfWidth);
+    self.filterByIdTitle:setY(labelY)
     self.filterById:setX(halfWidth);
+    self.filterById:setY(filterY)
     self.filterById:setWidth(halfWidth);
 end
 
@@ -297,17 +323,15 @@ end
 --*********************************************************
 function UIItemTables:initList(module)
     self.totalResult = 0;
-    local displayCategoryNames = {}
-    local displayCategoryMap = {}
+    self.datas:clear()
+    self.datas.fullList = nil
     for _, v in ipairs(module) do
         self.datas:addItem(v:getDisplayName(), v);
-        if not displayCategoryMap[v:getDisplayCategory()] then
-            displayCategoryMap[v:getDisplayCategory()] = true
-            table.insert(displayCategoryNames, v:getDisplayCategory())
-        end
         self.totalResult = self.totalResult + 1;
     end
     table.sort(self.datas.items, function(a,b) return not string.sort(a.item:getDisplayName(), b.item:getDisplayName()); end);
+    self.datas.selected = 0
+    self:updatePanel()
 end
 
 --*********************************************************

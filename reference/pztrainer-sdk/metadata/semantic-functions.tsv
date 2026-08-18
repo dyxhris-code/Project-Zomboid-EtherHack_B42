@@ -1,0 +1,29 @@
+address	name	module	confidence	summary
+0x180001780	pztrainerDllMain	bootstrap	high	DLL entry point that starts the hook worker on process attach.
+0x180001810	jniCallObjectMethodWithIntArg	jni-helpers	medium	Calls a cached JNI object-returning instance method with one integer argument.
+0x1800018a0	jniCallIntMethod	jni-helpers	high	Calls a cached JNI integer-returning instance method without additional arguments.
+0x180001900	jniCallVoidMethodWithIntArg	jni-helpers	high	Calls a cached JNI void instance method with one integer argument.
+0x180001930	jniCallStaticObjectMethodOneArg	jni-helpers	medium	Calls a cached JNI static object method with one object argument.
+0x180007c90	copySmallString	cpp-runtime	medium	Copies an MSVC small-string value.
+0x180008440	destroySmallString	cpp-runtime	medium	Releases storage owned by an MSVC small-string value.
+0x180008c70	assignSmallString	cpp-runtime	high	Assigns bytes to an MSVC small-string value.
+0x180008dd0	appendSmallString	cpp-runtime	medium	Appends bytes to an MSVC small-string value.
+0x180009be0	readSteadyClockTimePoint	cpp-runtime	high	Reads a steady-clock time point used by request polling deadlines.
+0x180009cc0	findGlobalJniClass	jni-helpers	high	Finds a Java class and promotes it to a cached global JNI reference.
+0x18003e740	hookWorker	bootstrap	high	Waits for SwapBuffers and installs the rendering hook.
+0x18003ade0	initializeRenderBridge	render	high	Initializes ImGui, Win32/OpenGL backends, and input integration.
+0x180001df0	initializeCoreJniBridge	jni-core	medium	Caches the core player, entity, world, and rendering JNI surface.
+0x180009f30	initializeSkillBridge	skills	medium	Caches skill and experience JNI methods.
+0x18000d220	initializeItemWeaponBridge	items	medium	Caches item, weapon, inventory, and transaction JNI methods.
+0x18001a3e0	initializePalletGrantBridge	item-grant	high	Caches the classes, fields, and methods used by the disposable pallet route.
+0x18001a940	selectSafePalletCarrier	item-grant	high	Selects an effect-free HandWeapon from a fixed candidate list.
+0x18001aba0	sendDisposablePallet	item-grant	high	Creates, marks, serializes, and sends an AddExplosiveTrapPacket carrier.
+0x18001aee0	findReturnedPallet	item-grant	high	Scans the current square for the returned IsoTrap by item ID or marker and type.
+0x18001b260	submitTakeBricksAction	item-grant	high	Calls ISTakeBricks.createNewAndSend with player, pallet, square, type, and amount.
+0x18001b510	beginPalletItemGrant	item-grant	high	Validates the request, starts carrier delivery, and initializes the polling state.
+0x18001bc80	pollPalletItemGrant	item-grant	high	Polls for the server object, submits the native action, and handles completion or timeout.
+0x18001d190	initializeCharacterStatsBridge	character	medium	Caches character-stat JNI methods.
+0x180021840	initializePlayerDamageBridge	player	medium	Caches player health and damage JNI methods.
+0x180022ed0	initializeClimateBridge	climate	medium	Caches climate and weather JNI methods.
+0x180025840	invokeLuaBoundMethod	jni-helpers	high	Invokes a named Lua-bound Java method with a dynamically assembled argument list.
+0x18002a7c0	initializeBallisticsBridge	ballistics	medium	Caches projectile and ballistics JNI methods.

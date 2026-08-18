@@ -11,7 +11,7 @@ public final class AutoAimIntegrationTest {
     public static void main(String[] args) throws IOException {
         usesTheB42AimingAndVisibilityApis();
         exposesADefaultOffPersistentToggle();
-        addsTheCharacterPanelControlAndTranslations();
+        addsTheDedicatedAimPanelAndTranslations();
     }
 
     private static void usesTheB42AimingAndVisibilityApis() throws IOException {
@@ -36,6 +36,10 @@ public final class AutoAimIntegrationTest {
                 "Auto aim must have a finite distance and view cone");
         require(source.contains("player.setTargetAndCurrentDirection("),
                 "Auto aim must use the B42 direction API for immediate visual and animation alignment");
+        require(source.contains("targetPart")
+                        && source.contains("showTarget")
+                        && source.contains("getLockedTargetName()"),
+                "Auto aim must expose hit-part and locked-target display settings");
         require(!source.contains(".Hit(") && !source.contains("AttemptAttack"),
                 "Auto aim must not synthesize attacks or bypass native hit processing");
     }
@@ -57,22 +61,34 @@ public final class AutoAimIntegrationTest {
         require(api.contains("\"isAutoAimEnabled\", Boolean.toString(this.autoAim.isEnabled())"),
                 "Auto aim must be saved with the rest of the profile");
         require(luaMethods.contains("name = \"isAutoAimEnabled\"")
-                        && luaMethods.contains("name = \"toggleAutoAim\""),
+                        && luaMethods.contains("name = \"toggleAutoAim\"")
+                        && luaMethods.contains("name = \"getAutoAimTargetPart\"")
+                        && luaMethods.contains("name = \"setAutoAimTargetPart\"")
+                        && luaMethods.contains("name = \"isAutoAimShowTarget\"")
+                        && luaMethods.contains("name = \"toggleAutoAimShowTarget\""),
                 "Auto aim must expose the standard Lua getter and toggle methods");
     }
 
-    private static void addsTheCharacterPanelControlAndTranslations() throws IOException {
+    private static void addsTheDedicatedAimPanelAndTranslations() throws IOException {
         String panel = Files.readString(Path.of(
-                "src/main/resources/EtherHack/lua/components/panels/EtherCharacterPanel.lua"));
-        require(panel.contains("UI_CharacterPanel_AutoAim")
-                        && panel.contains("toggleAutoAim(isChecked)")
-                        && panel.contains("isAutoAimEnabled()"),
-                "The character panel must provide the auto-aim checkbox");
+                "src/main/resources/EtherHack/lua/components/panels/EtherAimPanel.lua"));
+        String menu = Files.readString(Path.of("src/main/resources/EtherHack/lua/EtherHackMenu.lua"));
+        String overlay = Files.readString(Path.of("src/main/java/EtherHack/Ether/EtherOverlay.java"));
+        require(panel.contains("setAutoAimTargetPart")
+                        && panel.contains("toggleAutoAimShowTarget")
+                        && panel.contains("toggleAutoAim(isChecked)"),
+                "The dedicated aim panel must provide configuration controls");
+        require(menu.contains("EtherAimPanel"),
+                "The dedicated aim panel must be registered in EtherTrainer navigation");
+        require(overlay.contains("getLockedTargetName()")
+                        && overlay.contains("UI_Overlay_AimTarget"),
+                "The existing overlay must be able to display the locked target");
 
         for (String language : new String[]{"EN", "CN"}) {
             String translations = Files.readString(Path.of(
                     "src/main/resources/EtherHack/translations/" + language + ".txt"));
-            require(translations.contains("UI_CharacterPanel_AutoAim"),
+            require(translations.contains("UI_AimPanel_Title")
+                            && translations.contains("UI_AimPanel_TargetPart"),
                     language + " translations must include the auto-aim label");
         }
     }

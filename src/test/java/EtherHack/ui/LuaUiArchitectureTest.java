@@ -27,9 +27,10 @@ public final class LuaUiArchitectureTest {
                         && menu.contains("EtherMain.minimumHeight     = 520"),
                 "The main shell must load the theme and enforce the redesigned usable minimum size");
         require(menu.contains("self.closeButton")
-                        && menu.contains("setAnchorRight(true)")
-                        && menu.contains("setAnchorBottom(true)"),
-                "The shell must expose a close command and keep resize controls attached to the right/bottom edges");
+                        && menu.contains("function EtherMain:layoutChildren()")
+                        && menu.contains("self.closeButton:setX(")
+                        && menu.contains("self.resizeWidget:setY("),
+                "The shell must use one explicit layout pass for close and resize controls");
         require(menu.contains("EtherMain.instance:close()"),
                 "Keyboard and title-bar close actions must share the same cleanup path");
     }
@@ -110,12 +111,20 @@ public final class LuaUiArchitectureTest {
 
     private static void guardsSelectionAndEmptyStates() throws IOException {
         String items = read("components/ui/UIItemTables.lua");
+        String itemCreator = read("components/panels/EtherItemCreator.lua");
         String map = read("components/panels/EtherMapPanel.lua");
         String settings = read("components/panels/EtherSettingsPanel.lua");
         require(items.contains("function UIItemTables:getSelectedItem()")
                         && items.contains("local selectedItem = self:getSelectedItem()")
                         && items.contains("if selectedItem == nil then return end"),
                 "Item actions must safely handle an empty selection");
+        require(itemCreator.contains("self.moduleList = ISScrollingListBox:new(")
+                        && itemCreator.contains("self.categoryList = ISScrollingListBox:new(")
+                        && itemCreator.contains("self.itemTable = UIItemTables:new(")
+                        && itemCreator.contains("function EtherItemCreator:layoutChildren()")
+                        && itemCreator.contains("function EtherItemCreator:onModuleSelected(moduleEntry)")
+                        && itemCreator.contains("function EtherItemCreator:onCategorySelected(categoryEntry)"),
+                "Item creator must provide a scrollable module/category/item master-detail layout");
         require(map.contains("if self.map == nil then return false end"),
                 "Map input must tolerate the no-player empty state");
         require(settings.contains("function EtherSettingsPanel:getSelectedConfig()")

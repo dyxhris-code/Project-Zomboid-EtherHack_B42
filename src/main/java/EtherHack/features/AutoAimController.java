@@ -4,6 +4,7 @@ import EtherHack.Ether.EtherAPI;
 import EtherHack.Ether.EtherMain;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import zombie.characters.IsoPlayer;
 import zombie.characters.IsoZombie;
 import zombie.inventory.InventoryItem;
@@ -17,6 +18,9 @@ public final class AutoAimController {
     private static final float MAX_LEVEL_DELTA = 0.25F;
 
     private boolean enabled;
+    private boolean showTarget;
+    private String targetPart = "head";
+    private IsoZombie lockedTarget;
 
     public static Vector2 adjustAimVector(IsoPlayer player, Vector2 nativeAimVector) {
         EtherMain main = EtherMain.getInstance();
@@ -30,6 +34,34 @@ public final class AutoAimController {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+        if (!enabled) {
+            this.lockedTarget = null;
+        }
+    }
+
+    public boolean isShowTarget() {
+        return this.showTarget;
+    }
+
+    public void setShowTarget(boolean showTarget) {
+        this.showTarget = showTarget;
+    }
+
+    public String getTargetPart() {
+        return this.targetPart;
+    }
+
+    public void setTargetPart(String targetPart) {
+        if ("torso".equals(targetPart) || "legs".equals(targetPart) || "head".equals(targetPart)) {
+            this.targetPart = targetPart;
+        }
+    }
+
+    public String getLockedTargetName() {
+        if (!this.showTarget || this.lockedTarget == null || !this.lockedTarget.isAlive()) {
+            return "";
+        }
+        return String.format(Locale.ROOT, "Zombie (%.1f, %.1f)", this.lockedTarget.getX(), this.lockedTarget.getY());
     }
 
     Vector2 adjust(IsoPlayer player, Vector2 nativeAimVector) {
@@ -42,11 +74,13 @@ public final class AutoAimController {
                 || player.getCurrentSquare() == null
                 || IsoWorld.instance == null
                 || IsoWorld.instance.getCell() == null) {
+            this.lockedTarget = null;
             return nativeAimVector;
         }
 
         InventoryItem primaryItem = player.getPrimaryHandItem();
         if (!(primaryItem instanceof HandWeapon weapon) || !weapon.isRanged()) {
+            this.lockedTarget = null;
             return nativeAimVector;
         }
 
@@ -59,6 +93,7 @@ public final class AutoAimController {
         List<AutoAimTargetSelector.Candidate<IsoZombie>> candidates = new ArrayList<>();
         ArrayList<IsoZombie> zombies = IsoWorld.instance.getCell().getZombieList();
         if (zombies == null || zombies.isEmpty()) {
+            this.lockedTarget = null;
             return nativeAimVector;
         }
 
@@ -94,23 +129,37 @@ public final class AutoAimController {
                     true));
         }
 
-        return AutoAimTargetSelector.select(
+        var selected = AutoAimTargetSelector.select(
                         candidates,
                         nativeAimVector.x,
                         nativeAimVector.y,
                         maximumDistance,
-                        MINIMUM_AIM_DOT)
-                .map(candidate -> applyDirection(player, nativeAimVector, candidate))
-                .orElse(nativeAimVector);
+                        MINIMUM_AIM_DOT);
+        if (selected.isEmpty()) {
+            this.lockedTarget = null;
+            return nativeAimVector;
+        }
+
+        this.lockedTarget = selected.get().target();
+        return applyDirection(player, nativeAimVector, selected.get());
     }
 
-    private static Vector2 applyDirection(
+    private Vector2 applyDirection(
             IsoPlayer player,
             Vector2 nativeAimVector,
             AutoAimTargetSelector.Candidate<IsoZombie> candidate) {
         nativeAimVector.set(candidate.deltaX(), candidate.deltaY());
         nativeAimVector.normalize();
         player.setTargetAndCurrentDirection(nativeAimVector.x, nativeAimVector.y);
+        player.setTargetVerticalAimAngle(targetPartAngle());
         return nativeAimVector;
+    }
+
+    private float targetPartAngle() {
+        return switch (this.targetPart) {
+            case "legs" -> 0.22F;
+            case "torso" -> 0.0F;
+            default -> -0.22F;
+        };
     }
 }

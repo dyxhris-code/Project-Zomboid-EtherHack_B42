@@ -151,20 +151,24 @@ public final class LuaCompatibilityTest {
                 "EtherHack menu must expose a bottom-right resize handle");
         require(menu.contains("function EtherMain:resizeTo(width, height)"),
                 "EtherHack menu must centralize resize layout updates");
+        require(menu.contains("if self.isResizing then return end")
+                        && menu.contains("self.lastResizeWidth")
+                        && menu.contains("self.lastResizeHeight"),
+                "EtherHack menu must coalesce resize callbacks to prevent UI jitter");
         require(menu.contains("ISLayoutManager.RegisterWindow(\"EtherHackMain\""),
                 "EtherHack menu must persist its geometry through the B42 layout manager");
 
         String buttons = read("components/ui/UIButtonsPanel.lua");
-        require(buttons.contains("panel:setAnchorRight(true)")
-                        && buttons.contains("panel:setAnchorBottom(true)"),
-                "The active EtherHack tab must follow main-window resizing");
+        require(buttons.contains("panel:setAnchorRight(false)")
+                        && buttons.contains("function UIButtonsPanel:layoutPanel(panel)"),
+                "The active EtherHack tab must use explicit root-window layout without anchor drift");
     }
 
     private static void anchorsSizeSensitivePanelContent() throws IOException {
         String itemCreator = read("components/panels/EtherItemCreator.lua");
-        require(itemCreator.contains("self.panel:setAnchorRight(true)")
-                        && itemCreator.contains("self.panel:setAnchorBottom(true)"),
-                "Item-creator tabs must grow with their panel");
+        require(itemCreator.contains("function EtherItemCreator:layoutChildren()")
+                        && itemCreator.contains("self.itemTable:setWidth(itemWidth)"),
+                "Item-creator columns must be recalculated from the current panel size");
         String itemTables = read("components/ui/UIItemTables.lua");
         require(itemTables.contains("self.datas:setAnchorRight(true)")
                         && itemTables.contains("self.datas:setAnchorBottom(true)"),

@@ -62,7 +62,7 @@ function UIModalAddXP:createChildren()
     self.acceptButton.isOnlyInGame = true;
     self:addChild(self.acceptButton);
 
-    self.closeButton = UIButton:new(self.acceptButton.x + self.acceptButton.width + 10, self.height - 35, 100, 25, getTranslate("UI_PlayerEditor_PlayerSkills_ModalClose"), 
+    self.closeButton = UIButton:new(self.acceptButton.x + self.acceptButton.width + 10, self.height - 35, 100, 25, getTranslate("UI_PlayerEditor_PlayerSkills_ModalClose"),
     function() 
         UIModalAddXP.instance:setVisible(false);
         UIModalAddXP.instance:removeFromUIManager();

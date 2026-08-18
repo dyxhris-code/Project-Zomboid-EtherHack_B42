@@ -47,10 +47,10 @@ function UIButtonsPanel:openPanel(id)
             self.parent.height - self.y);
         panel:initialise();
         panel:instantiate();
-        panel:setAnchorLeft(true);
-        panel:setAnchorRight(true);
-        panel:setAnchorTop(true);
-        panel:setAnchorBottom(true);
+        panel:setAnchorLeft(false);
+        panel:setAnchorRight(false);
+        panel:setAnchorTop(false);
+        panel:setAnchorBottom(false);
         self.parent:addChild(panel);
         self.panels[id] = panel;
     end

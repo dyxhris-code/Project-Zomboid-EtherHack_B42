@@ -1,4 +1,4 @@
-# B42.20.2 Acceptance
+# B42.20.3 Acceptance
 
 ## Automated gates
 
@@ -24,7 +24,7 @@ There is no standalone Mod package, custom multiplayer command channel, or legal
 
 ## Manual smoke checklist
 
-1. Install into a backed-up B42.20.2 game root and record the original JAR hash.
+1. Install into a backed-up B42.20.3 game root and record the original JAR hash.
 2. Start the game and confirm the EtherHack logo appears before the normal logo.
 3. Confirm the title suffix and the Insert menu toggle.
 4. Open each visible Lua panel once, including item editor, player editor, vehicle mechanics, map, and visuals.

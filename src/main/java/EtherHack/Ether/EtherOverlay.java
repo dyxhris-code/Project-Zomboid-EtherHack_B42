@@ -50,6 +50,11 @@ public final class EtherOverlay {
          drawLine(main, line++, translate(main, "UI_Overlay_Fatigue") + formatPercent(fatigue));
          drawLine(main, line++, translate(main, "UI_Overlay_Features") + activeFeatureCount(api));
       }
+      if (api.autoAim.isShowTarget()) {
+         String target = api.autoAim.getLockedTargetName();
+         drawLine(main, line++, translate(main, "UI_Overlay_AimTarget")
+                 + (target.isEmpty() ? translate(main, "UI_Overlay_None") : target));
+      }
       if (api.isOverlayWeaponInfo) {
          line = drawWeapon(main, player, line);
       }

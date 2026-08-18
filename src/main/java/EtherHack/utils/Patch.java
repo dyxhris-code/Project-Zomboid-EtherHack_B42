@@ -76,7 +76,7 @@ public final class Patch {
 
         if (target == null) {
             throw new IllegalStateException(
-                    "Required B42.20.2 method not found in " + className + ": " + methodName + descriptor);
+                    "Required Project Zomboid method not found in " + className + ": " + methodName + descriptor);
         }
         if (hasInjectedAnnotation(target)) {
             throw new IllegalStateException(

@@ -114,10 +114,6 @@ function EtherCharacterPanel:createChildren()
         toggleNoRecoil(isChecked)
     end, isNoRecoil(), false);
 
-    self:addCheckBox(getTranslate("UI_CharacterPanel_AutoAim"), function(isChecked)
-        toggleAutoAim(isChecked)
-    end, isAutoAimEnabled(), false);
-
     self:addSection(getTranslate("UI_CharacterSection_Inventory"));
     self:addCheckBox(getTranslate("UI_CharacterPanel_UnlimitedCarry"), function(isChecked)
         toggleEnableUnlimitedCarry(isChecked);

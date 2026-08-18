@@ -1,6 +1,7 @@
 package EtherHack.Ether;
 
 import EtherHack.features.LocalPlayerCheatController;
+import EtherHack.features.MediaXpController;
 import EtherHack.utils.Logger;
 import EtherHack.utils.PlayerUtils;
 import java.io.BufferedInputStream;
@@ -16,6 +17,7 @@ import se.krka.kahlua.integration.annotations.LuaMethod;
 import se.krka.kahlua.vm.KahluaTable;
 import zombie.Lua.LuaManager;
 import zombie.characters.IsoPlayer;
+import zombie.characters.skills.PerkFactory;
 import zombie.core.Color;
 import zombie.core.network.ByteBufferWriter;
 import zombie.core.textures.Texture;
@@ -276,7 +278,8 @@ public class EtherLuaMethods {
 
    @LuaMethod(name = "createItemGrantPallet", global = true)
    public static KahluaTable createItemGrantPallet(IsoPlayer player) {
-      if (player == null || player.getCurrentSquare() == null || !GameClient.client) {
+      if (player == null || player.getCurrentSquare() == null
+              || !GameClient.client || GameClient.connection == null) {
          return null;
       }
 
@@ -504,6 +507,31 @@ public class EtherLuaMethods {
       EtherMain.getInstance().etherAPI.autoAim.setEnabled(enabled);
    }
 
+   @LuaMethod(name = "getAutoAimTargetPart", global = true)
+   public static String getAutoAimTargetPart() {
+      return EtherMain.getInstance().etherAPI.autoAim.getTargetPart();
+   }
+
+   @LuaMethod(name = "setAutoAimTargetPart", global = true)
+   public static void setAutoAimTargetPart(String targetPart) {
+      EtherMain.getInstance().etherAPI.autoAim.setTargetPart(targetPart);
+   }
+
+   @LuaMethod(name = "isAutoAimShowTarget", global = true)
+   public static boolean isAutoAimShowTarget() {
+      return EtherMain.getInstance().etherAPI.autoAim.isShowTarget();
+   }
+
+   @LuaMethod(name = "toggleAutoAimShowTarget", global = true)
+   public static void toggleAutoAimShowTarget(boolean showTarget) {
+      EtherMain.getInstance().etherAPI.autoAim.setShowTarget(showTarget);
+   }
+
+   @LuaMethod(name = "getAutoAimLockedTarget", global = true)
+   public static String getAutoAimLockedTarget() {
+      return EtherMain.getInstance().etherAPI.autoAim.getLockedTargetName();
+   }
+
    @LuaMethod(
       name = "isAutoRepairItems",
       global = true
@@ -518,6 +546,16 @@ public class EtherLuaMethods {
    )
    public static void toggleAutoRepairItems(boolean var0) {
       EtherMain.getInstance().etherAPI.isAutoRepairItems = var0;
+   }
+
+   @LuaMethod(name = "addXpFromNearbyBroadcast", global = true)
+   public static boolean addXpFromNearbyBroadcast(PerkFactory.Perk perk, float amount) {
+      return MediaXpController.sendXpBroadcast(IsoPlayer.getInstance(), perk, amount);
+   }
+
+   @LuaMethod(name = "getMediaXpFailureReason", global = true)
+   public static String getMediaXpFailureReason() {
+      return MediaXpController.getLastFailureReason();
    }
 
    @LuaMethod(

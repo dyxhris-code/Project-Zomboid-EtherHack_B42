@@ -1,0 +1,5 @@
+binary/
+radare-project/
+ghidra-project/
+*.r2
+

@@ -70,7 +70,25 @@ function UISkillTable:createChildren()
     self:addChild(self.addXP);
     table.insert(self.buttonList, self.addXP);
 
-    self.addLevel = UIButton:new(self.addXP.x + self.addXP.width + 10, self.height - 80, 100, 24, getTranslate("UI_PlayerEditor_PlayerSkills_AddLevel"), 
+    self.mediaXP = UIButton:new(0, self.height - 80, 120, 24, getTranslate("UI_PlayerEditor_PlayerSkills_AddMediaXP"),
+    function()
+        local selectedItem = self:getSelectedSkill()
+        if self.localPlayer == nil or selectedItem == nil then return end
+        if UIModalMediaXP.instance ~= nil then UIModalMediaXP.instance:close() end
+        local modal = UIModalMediaXP:new(selectedItem.perk)
+        modal:initialise()
+        modal:addToUIManager()
+        modal:setAlwaysOnTop(true)
+    end)
+    self.mediaXP:initialise();
+    self.mediaXP:instantiate();
+    self.mediaXP.isOnlyInGame = true;
+    self.mediaXP.isRequireSelected = true;
+    self.mediaXP:setTooltip(getTranslate("UI_PlayerEditor_PlayerSkills_MediaXPTooltip"));
+    self:addChild(self.mediaXP);
+    table.insert(self.buttonList, self.mediaXP);
+
+    self.addLevel = UIButton:new(0, self.height - 80, 100, 24, getTranslate("UI_PlayerEditor_PlayerSkills_AddLevel"),
     function() 
         local selectedItem = self:getSelectedSkill()
         if self.localPlayer == nil or selectedItem == nil then return end
@@ -144,6 +162,26 @@ function UISkillTable:createChildren()
 
     self:updateSkills();
     self:update();
+    self:layoutChildren()
+end
+
+function UISkillTable:layoutChildren()
+    if self.datas == nil then return end
+    local gap = 6
+    local count = #self.buttonList
+    local buttonWidth = math.floor((self.width - gap * (count - 1)) / count)
+    self.datas:setWidth(self.width)
+    self.datas:setHeight(math.max(60, self.height - 90))
+    for index, button in ipairs(self.buttonList) do
+        button:setX((index - 1) * (buttonWidth + gap))
+        button:setY(self.height - 80)
+        button:setWidth(buttonWidth)
+    end
+end
+
+function UISkillTable:onResize(width, height)
+    ISPanel.onResize(self, width, height)
+    self:layoutChildren()
 end
 
 --*********************************************************

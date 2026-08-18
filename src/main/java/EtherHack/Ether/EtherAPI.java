@@ -143,6 +143,8 @@ public class EtherAPI {
       var3.setProperty("isZombieDontAttack", Boolean.toString(this.isZombieDontAttack));
       var3.setProperty("isNoRecoil", Boolean.toString(this.isNoRecoil));
       var3.setProperty("isAutoAimEnabled", Boolean.toString(this.autoAim.isEnabled()));
+      var3.setProperty("autoAimTargetPart", this.autoAim.getTargetPart());
+      var3.setProperty("isAutoAimShowTarget", Boolean.toString(this.autoAim.isShowTarget()));
       var3.setProperty("isUnlimitedCarry", Boolean.toString(this.isUnlimitedCarry));
       var3.setProperty("isUnlimitedCondition", Boolean.toString(this.isUnlimitedCondition));
       var3.setProperty("isUnlimitedEndurance", Boolean.toString(this.isUnlimitedEndurance));
@@ -250,6 +252,8 @@ public class EtherAPI {
       this.isZombieDontAttack = ConfigUtils.getBooleanFromConfig(var3, "isZombieDontAttack", false);
       this.isNoRecoil = ConfigUtils.getBooleanFromConfig(var3, "isNoRecoil", false);
       this.autoAim.setEnabled(ConfigUtils.getBooleanFromConfig(var3, "isAutoAimEnabled", false));
+      this.autoAim.setTargetPart(var3.getProperty("autoAimTargetPart", "head"));
+      this.autoAim.setShowTarget(ConfigUtils.getBooleanFromConfig(var3, "isAutoAimShowTarget", false));
       this.isUnlimitedCarry = ConfigUtils.getBooleanFromConfig(var3, "isUnlimitedCarry", false);
       this.isUnlimitedCondition = ConfigUtils.getBooleanFromConfig(var3, "isUnlimitedCondition", false);
       this.isUnlimitedEndurance = ConfigUtils.getBooleanFromConfig(var3, "isUnlimitedEndurance", false);
@@ -334,6 +338,8 @@ public class EtherAPI {
       this.isZombieDontAttack = ConfigUtils.getBooleanFromConfig(var1, "isZombieDontAttack", false);
       this.isNoRecoil = ConfigUtils.getBooleanFromConfig(var1, "isNoRecoil", false);
       this.autoAim.setEnabled(ConfigUtils.getBooleanFromConfig(var1, "isAutoAimEnabled", false));
+      this.autoAim.setTargetPart(var1.getProperty("autoAimTargetPart", "head"));
+      this.autoAim.setShowTarget(ConfigUtils.getBooleanFromConfig(var1, "isAutoAimShowTarget", false));
       this.isUnlimitedCarry = ConfigUtils.getBooleanFromConfig(var1, "isUnlimitedCarry", false);
       this.isUnlimitedCondition = ConfigUtils.getBooleanFromConfig(var1, "isUnlimitedCondition", false);
       this.isUnlimitedEndurance = ConfigUtils.getBooleanFromConfig(var1, "isUnlimitedEndurance", false);
