@@ -20,6 +20,7 @@ public final class AutoAimController {
     private boolean enabled;
     private boolean showTarget;
     private String targetPart = "head";
+    private String mode = "traditional";
     private IsoZombie lockedTarget;
 
     public static Vector2 adjustAimVector(IsoPlayer player, Vector2 nativeAimVector) {
@@ -54,6 +55,16 @@ public final class AutoAimController {
     public void setTargetPart(String targetPart) {
         if ("torso".equals(targetPart) || "legs".equals(targetPart) || "head".equals(targetPart)) {
             this.targetPart = targetPart;
+        }
+    }
+
+    public String getMode() {
+        return this.mode;
+    }
+
+    public void setMode(String mode) {
+        if ("bullet".equals(mode) || "traditional".equals(mode)) {
+            this.mode = mode;
         }
     }
 
@@ -150,8 +161,10 @@ public final class AutoAimController {
             AutoAimTargetSelector.Candidate<IsoZombie> candidate) {
         nativeAimVector.set(candidate.deltaX(), candidate.deltaY());
         nativeAimVector.normalize();
-        player.setTargetAndCurrentDirection(nativeAimVector.x, nativeAimVector.y);
-        player.setTargetVerticalAimAngle(targetPartAngle());
+        if ("traditional".equals(this.mode)) {
+            player.setTargetAndCurrentDirection(nativeAimVector.x, nativeAimVector.y);
+            player.setTargetVerticalAimAngle(targetPartAngle());
+        }
         return nativeAimVector;
     }
 

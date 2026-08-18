@@ -16,8 +16,18 @@ local function setupIndexList(list, target, callback)
     list.font = UIFont.Small
     list.selected = 0
     list.drawBorder = true
+    list.backgroundColor = UITheme.colors.surface
+    list.borderColor = UITheme.colors.border
+    list.selectedTextColor = UITheme.colors.text
     list.target = target
     list.onmousedown = callback
+end
+
+local function anchorListScrollBar(list)
+    if list == nil or list.vscroll == nil then return end
+    list.vscroll:setX(math.max(0, list.width - list.vscroll.width))
+    list.vscroll:setY(0)
+    list.vscroll:setHeight(list.height)
 end
 
 function EtherItemCreator:createChildren()
@@ -66,7 +76,7 @@ end
 function EtherItemCreator:populateModules()
     self.moduleList:clear()
     for _, moduleName in ipairs(sortedKeys(self.itemsByModule)) do
-        self.moduleList:addItem(moduleName, {name = moduleName})
+        self.moduleList:addItem(moduleName, {name = moduleName}, moduleName)
     end
     if #self.moduleList.items > 0 then
         self.moduleList.selected = 1
@@ -79,7 +89,7 @@ function EtherItemCreator:onModuleSelected(moduleEntry)
     self.selectedModule = moduleEntry.name
     self.categoryList:clear()
     for _, categoryName in ipairs(sortedKeys(self.itemsByModule[self.selectedModule])) do
-        self.categoryList:addItem(categoryName, {name = categoryName})
+        self.categoryList:addItem(categoryName, {name = categoryName}, categoryName)
     end
     if #self.categoryList.items > 0 then
         self.categoryList.selected = 1
@@ -97,25 +107,47 @@ end
 
 function EtherItemCreator:layoutChildren()
     if self.moduleList == nil then return end
-    local gap = 8
-    local titleHeight = 24
-    local contentHeight = math.max(100, self.height - titleHeight - gap)
-    local moduleWidth = math.max(150, math.min(220, math.floor(self.width * 0.22)))
-    local categoryWidth = math.max(180, math.min(250, math.floor(self.width * 0.24)))
+    local padding = 10
+    local gap = 12
+    local titleHeight = 28
+    local contentHeight = math.max(100, self.height - titleHeight - padding * 2)
+    local moduleWidth = math.max(190, math.min(260, math.floor(self.width * 0.24)))
+    local categoryWidth = math.max(220, math.min(300, math.floor(self.width * 0.26)))
     local itemX = moduleWidth + categoryWidth + gap * 2
-    local itemWidth = math.max(360, self.width - itemX)
+    local itemWidth = math.max(420, self.width - itemX - padding)
 
-    self.moduleTitle:setX(0); self.moduleTitle:setY(0)
-    self.categoryTitle:setX(moduleWidth + gap); self.categoryTitle:setY(0)
-    self.itemTitle:setX(itemX); self.itemTitle:setY(0)
+    self.moduleTitle:setX(padding); self.moduleTitle:setY(4)
+    self.categoryTitle:setX(moduleWidth + gap + padding); self.categoryTitle:setY(4)
+    self.itemTitle:setX(itemX); self.itemTitle:setY(4)
 
-    self.moduleList:setX(0); self.moduleList:setY(titleHeight)
+    self.moduleList:setX(padding); self.moduleList:setY(titleHeight)
     self.moduleList:setWidth(moduleWidth); self.moduleList:setHeight(contentHeight)
-    self.categoryList:setX(moduleWidth + gap); self.categoryList:setY(titleHeight)
+    anchorListScrollBar(self.moduleList)
+    self.categoryList:setX(moduleWidth + gap + padding); self.categoryList:setY(titleHeight)
     self.categoryList:setWidth(categoryWidth); self.categoryList:setHeight(contentHeight)
+    anchorListScrollBar(self.categoryList)
     self.itemTable:setX(itemX); self.itemTable:setY(titleHeight)
     self.itemTable:setWidth(itemWidth); self.itemTable:setHeight(contentHeight)
     self.itemTable:onResize()
+end
+
+function EtherItemCreator:prerender()
+    ISPanel.prerender(self)
+    local padding = 10
+    local gap = 12
+    local moduleWidth = self.moduleList ~= nil and self.moduleList.width or 0
+    local categoryWidth = self.categoryList ~= nil and self.categoryList.width or 0
+    local itemX = moduleWidth + categoryWidth + gap * 2 + padding
+    local colors = UITheme.colors
+    self:drawRect(0, 0, self.width, self.height, 1, colors.window.r, colors.window.g, colors.window.b)
+    for _, box in ipairs({
+        {padding, 28, moduleWidth, self.moduleList and self.moduleList.height or 0},
+        {padding + moduleWidth + gap, 28, categoryWidth, self.categoryList and self.categoryList.height or 0},
+        {itemX, 28, self.itemTable and self.itemTable.width or 0, self.itemTable and self.itemTable.height or 0}
+    }) do
+        self:drawRectBorder(box[1], box[2], box[3], box[4], 1,
+            colors.border.r, colors.border.g, colors.border.b)
+    end
 end
 
 function EtherItemCreator:onResize(width, height)

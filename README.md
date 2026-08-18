@@ -104,7 +104,7 @@ This tool requires:
 gradlew.bat clean check jar -PpzHome="C:\\Steam\\steamapps\\common\\ProjectZomboid"
 ```
 
-3. Move the created `build/EtherTrainer-Re.1.0.1.jar` to the root folder of the game
+3. Move the created `build/EtherTrainer-Re.1.0.2.jar` to the root folder of the game
 
 (For example, `c:\Steam\steamapps\common\ProjectZomboid`)
 
@@ -114,7 +114,7 @@ gradlew.bat clean check jar -PpzHome="C:\\Steam\\steamapps\\common\\ProjectZombo
 java -jar ./EtherTrainer-{yourVersion}.jar --install
 ```
 
-The generated filename is currently `EtherTrainer-Re.1.0.1.jar`.
+The generated filename is currently `EtherTrainer-Re.1.0.2.jar`.
 ### Uninstallation
 Open the console in the root folder and run the following command:
 ```
@@ -165,6 +165,12 @@ See [docs/B42_ACCEPTANCE.md](docs/B42_ACCEPTANCE.md) for the migration gates and
 ## Contributing
 
 We welcome contributions from the community. If you want to contribute, please fork the repository and create a pull request with your changes.
+
+### Contributor
+
+The original author and upstream project remain credited to [Yeet-Masta](https://github.com/Yeet-Masta/Project-Zomboid-EtherHack).
+
+The B42 migration and current maintenance contributions in this repository are by `ljy87`, in [ljy87263621/Project-Zomboid-EtherHack_B42](https://github.com/ljy87263621/Project-Zomboid-EtherHack_B42).
 
 ## Disclaimer
 

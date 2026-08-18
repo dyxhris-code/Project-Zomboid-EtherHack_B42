@@ -64,6 +64,7 @@ public class EtherAPI {
    public boolean isEnableNightVision;
    public boolean isZombieDontAttack;
    public boolean isNoRecoil;
+   public boolean isNoSpread;
    public boolean isUnlimitedCarry;
    public boolean isUnlimitedCondition;
    public boolean isUnlimitedEndurance;
@@ -142,8 +143,10 @@ public class EtherAPI {
       var3.setProperty("isEnableNightVision", Boolean.toString(this.isEnableNightVision));
       var3.setProperty("isZombieDontAttack", Boolean.toString(this.isZombieDontAttack));
       var3.setProperty("isNoRecoil", Boolean.toString(this.isNoRecoil));
+      var3.setProperty("isNoSpread", Boolean.toString(this.isNoSpread));
       var3.setProperty("isAutoAimEnabled", Boolean.toString(this.autoAim.isEnabled()));
       var3.setProperty("autoAimTargetPart", this.autoAim.getTargetPart());
+      var3.setProperty("autoAimMode", this.autoAim.getMode());
       var3.setProperty("isAutoAimShowTarget", Boolean.toString(this.autoAim.isShowTarget()));
       var3.setProperty("isUnlimitedCarry", Boolean.toString(this.isUnlimitedCarry));
       var3.setProperty("isUnlimitedCondition", Boolean.toString(this.isUnlimitedCondition));
@@ -251,8 +254,10 @@ public class EtherAPI {
       this.isEnableNightVision = ConfigUtils.getBooleanFromConfig(var3, "isEnableNightVision", false);
       this.isZombieDontAttack = ConfigUtils.getBooleanFromConfig(var3, "isZombieDontAttack", false);
       this.isNoRecoil = ConfigUtils.getBooleanFromConfig(var3, "isNoRecoil", false);
+      this.isNoSpread = ConfigUtils.getBooleanFromConfig(var3, "isNoSpread", false);
       this.autoAim.setEnabled(ConfigUtils.getBooleanFromConfig(var3, "isAutoAimEnabled", false));
       this.autoAim.setTargetPart(var3.getProperty("autoAimTargetPart", "head"));
+      this.autoAim.setMode(var3.getProperty("autoAimMode", "traditional"));
       this.autoAim.setShowTarget(ConfigUtils.getBooleanFromConfig(var3, "isAutoAimShowTarget", false));
       this.isUnlimitedCarry = ConfigUtils.getBooleanFromConfig(var3, "isUnlimitedCarry", false);
       this.isUnlimitedCondition = ConfigUtils.getBooleanFromConfig(var3, "isUnlimitedCondition", false);
@@ -337,8 +342,10 @@ public class EtherAPI {
       this.isEnableNightVision = ConfigUtils.getBooleanFromConfig(var1, "isEnableNightVision", false);
       this.isZombieDontAttack = ConfigUtils.getBooleanFromConfig(var1, "isZombieDontAttack", false);
       this.isNoRecoil = ConfigUtils.getBooleanFromConfig(var1, "isNoRecoil", false);
+      this.isNoSpread = ConfigUtils.getBooleanFromConfig(var1, "isNoSpread", false);
       this.autoAim.setEnabled(ConfigUtils.getBooleanFromConfig(var1, "isAutoAimEnabled", false));
       this.autoAim.setTargetPart(var1.getProperty("autoAimTargetPart", "head"));
+      this.autoAim.setMode(var1.getProperty("autoAimMode", "traditional"));
       this.autoAim.setShowTarget(ConfigUtils.getBooleanFromConfig(var1, "isAutoAimShowTarget", false));
       this.isUnlimitedCarry = ConfigUtils.getBooleanFromConfig(var1, "isUnlimitedCarry", false);
       this.isUnlimitedCondition = ConfigUtils.getBooleanFromConfig(var1, "isUnlimitedCondition", false);
@@ -437,7 +444,9 @@ public class EtherAPI {
                   var5.setMaxRange(var7[3]);
                   var5.setMinRange(var7[4]);
                   var5.setHitChance((int)var7[5]);
-                  var5.setCriticalDamageMultiplier(var7[6]);
+               var5.setCriticalDamageMultiplier(var7[6]);
+               if (var7.length > 7) var5.setProjectileSpread(var7[7]);
+               if (var7.length > 8) var5.setRecoilDelay((int)var7[8]);
                }
             }
          }
@@ -449,20 +458,34 @@ public class EtherAPI {
       if (var1 != null) {
          InventoryItem var2 = var1.getPrimaryHandItem();
          HandWeapon var3;
-         if (this.isExtraDamage && var2 != null && (var2.getStringItemType().equals("RangedWeapon") || var2.getStringItemType().equals("MeleeWeapon")) && var2 instanceof HandWeapon) {
-            var3 = (HandWeapon)var2;
-            String var4 = var3.getFullType();
-            if (!this.originalWeaponStats.containsKey(var4)) {
-               this.originalWeaponStats.put(var4, new float[]{var3.getExtraDamage(), var3.getMaxDamage(), var3.getMinDamage(), var3.getMaxRange(), var3.getMinRange(), (float)var3.getHitChance(), var3.getCriticalDamageMultiplier()});
+         if (var2 instanceof HandWeapon weapon
+                 && (var2.getStringItemType().equals("RangedWeapon") || var2.getStringItemType().equals("MeleeWeapon"))
+                 && (this.isExtraDamage || this.isNoRecoil || this.isNoSpread)) {
+            String fullType = weapon.getFullType();
+            if (!this.originalWeaponStats.containsKey(fullType)) {
+               this.originalWeaponStats.put(fullType, new float[]{
+                       weapon.getExtraDamage(), weapon.getMaxDamage(), weapon.getMinDamage(),
+                       weapon.getMaxRange(), weapon.getMinRange(), (float)weapon.getHitChance(),
+                       weapon.getCriticalDamageMultiplier(), weapon.getProjectileSpread(),
+                       (float)weapon.getRecoilDelay()});
             }
 
-            var3.setExtraDamage(100000.0F);
-            var3.setMaxDamage(1000000.0F);
-            var3.setMinDamage(1000000.0F);
-            var3.setMaxRange(10000.0F);
-            var3.setMinRange(0.0F);
-            var3.setHitChance(100);
-            var3.setCriticalDamageMultiplier(100000.0F);
+            if (this.isExtraDamage) {
+               weapon.setExtraDamage(100000.0F);
+               weapon.setMaxDamage(1000000.0F);
+               weapon.setMinDamage(1000000.0F);
+               weapon.setMaxRange(10000.0F);
+               weapon.setMinRange(0.0F);
+               weapon.setHitChance(100);
+               weapon.setCriticalDamageMultiplier(100000.0F);
+            }
+            if (this.isNoRecoil) {
+               weapon.setRecoilDelay(0);
+               weapon.setCriticalChance(100.0F);
+               weapon.setAlwaysKnockdown(true);
+               weapon.setAimingTime(0);
+            }
+            if (this.isNoSpread) weapon.setProjectileSpread(0.0F);
          }
 
          if ((Boolean)SandboxOptions.instance.getOptionByName("MultiHitZombies").asConfigOption().getValueAsObject() != this.isMultiHitZombies) {
@@ -482,14 +505,6 @@ public class EtherAPI {
 
          if (var1.isWearingNightVisionGoggles() != this.isEnableNightVision) {
             var1.setWearingNightVisionGoggles(this.isEnableNightVision);
-         }
-
-         if (this.isNoRecoil && var2 != null && var2.getStringItemType().equals("RangedWeapon") && var2 instanceof HandWeapon) {
-            var3 = (HandWeapon)var2;
-            var3.setRecoilDelay(0);
-            var3.setCriticalChance(100.0F);
-            var3.setAlwaysKnockdown(true);
-            var3.setAimingTime(0);
          }
 
          if (this.isUnlimitedAmmo && var2 != null && var2.getStringItemType().equals("RangedWeapon")) {

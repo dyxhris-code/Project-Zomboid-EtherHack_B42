@@ -7,6 +7,13 @@ require "TimedActions/ISTakeBricks"
 UIItemTables = ISPanel:derive("UIItemTables");
 
 local fontHeightSmall = getTextManager():getFontHeight(UIFont.Small)
+
+local function anchorListScrollBar(list)
+    if list == nil or list.vscroll == nil then return end
+    list.vscroll:setX(math.max(0, list.width - list.vscroll.width))
+    list.vscroll:setY(0)
+    list.vscroll:setHeight(list.height)
+end
 local ITEM_GRANT_MODE_LOCAL_NATIVE = "local-native"
 local ITEM_GRANT_MODE_ADMIN_COMMAND = "admin-command"
 local ITEM_GRANT_MODE_SERVER_WORLD_ACTION = "server-world-action"
@@ -151,8 +158,13 @@ function UIItemTables:onResize()
     local gap = 6
     local buttonWidth = math.floor((self.width - gap * 3) / 4)
 
+    -- Keep the last few pixels clear of ISScrollingListBox's vertical scrollbar.
     self.datas:setWidth(self.width)
     self.datas:setHeight(listHeight)
+    anchorListScrollBar(self.datas)
+    if self.datas.columns ~= nil and self.datas.columns[2] ~= nil then
+        self.datas.columns[2].size = math.floor(self.width * 0.45)
+    end
     self.addItemX1:setX(0); self.addItemX1:setY(actionY); self.addItemX1:setWidth(buttonWidth)
     self.addItemX2:setX(buttonWidth + gap); self.addItemX2:setY(actionY); self.addItemX2:setWidth(buttonWidth)
     self.addItemX5:setX((buttonWidth + gap) * 2); self.addItemX5:setY(actionY); self.addItemX5:setWidth(buttonWidth)
@@ -195,7 +207,7 @@ function UIItemTables:createChildren()
     self.datas.doDrawItem = self.drawDatas;
     self.datas.drawBorder = true;
     self.datas:addColumn(getTranslate("UI_ItemCreator_Title_ItemName"), 0);
-    self.datas:addColumn(getTranslate("UI_ItemCreator_Title_ItemCategory"), 250)
+    self.datas:addColumn(getTranslate("UI_ItemCreator_Title_ItemCategory"), math.floor(self.width * 0.45))
     self:addChild(self.datas);
 
     self.filterByNameTitle = ISLabel:new(0, self.height - 40, 20, getTranslate("UI_ItemCreator_Title_FilterByName"), 1, 1, 1, 1, UIFont.Medium, true)
@@ -407,6 +419,7 @@ function UIItemTables:drawDatas(y, item, alt)
     local iconSize = fontHeightSmall;
 
     local clipX = self.columns[1].size
+    local contentRight = math.max(self.columns[2].size, self.width - 18)
     local clipX2 = self.columns[2].size
     local clipY = math.max(0, y + self:getYScroll())
     local clipY2 = math.min(self.height, y + self:getYScroll() + self.itemheight)
@@ -415,13 +428,16 @@ function UIItemTables:drawDatas(y, item, alt)
     self:drawText(item.item:getDisplayName(), 25, y + 4, 1, 1, 1, a, self.font);
     self:clearStencilRect()
 
+    self:setStencilRect(self.columns[2].size, clipY,
+        math.max(0, contentRight - self.columns[2].size), clipY2 - clipY)
     if item.item:getDisplayCategory() ~= nil then
         self:drawText(getText("IGUI_ItemCat_" .. item.item:getDisplayCategory()), self.columns[2].size + 10, y + 4, 1, 1, 1, a, self.font);
     else
         self:drawText("<NONE>", self.columns[2].size + 10, y + 4, 1, 1, 1, a, self.font);
     end
+    self:clearStencilRect()
     
-    self:repaintStencilRect(0, clipY, self.width - 20, clipY2 - clipY)
+    self:repaintStencilRect(0, clipY, math.max(0, self.width - 18), clipY2 - clipY)
 
     local icon = item.item:getIcon()
     if item.item:getIconsForTexture() and not item.item:getIconsForTexture():isEmpty() then

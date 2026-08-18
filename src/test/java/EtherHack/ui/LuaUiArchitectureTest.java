@@ -23,8 +23,8 @@ public final class LuaUiArchitectureTest {
         require(Files.isRegularFile(LUA_ROOT.resolve("components/ui/UITheme.lua")),
                 "The UI must provide shared theme tokens");
         require(menu.contains("UITheme.lua")
-                        && menu.contains("EtherMain.minimumWidth      = 760")
-                        && menu.contains("EtherMain.minimumHeight     = 520"),
+                        && menu.contains("EtherMain.minimumWidth      = 960")
+                        && menu.contains("EtherMain.minimumHeight     = 540"),
                 "The main shell must load the theme and enforce the redesigned usable minimum size");
         require(menu.contains("self.closeButton")
                         && menu.contains("function EtherMain:layoutChildren()")

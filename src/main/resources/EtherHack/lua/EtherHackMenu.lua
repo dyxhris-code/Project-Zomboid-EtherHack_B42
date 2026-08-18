@@ -47,10 +47,10 @@ end
 EtherMain                   = ISPanel:derive("EtherMain"); -- Наследование от ISPanel
 EtherMain.instance          = nil; --Экземпляр окна
 EtherMain.menuKeyID         = 210; -- Клавиша открытия окна - Insert (210)
-EtherMain.defaultWidth      = 980; -- Стандартная ширина окна
-EtherMain.defaultHeight     = 560; -- Стандартная высота окна
-EtherMain.minimumWidth      = 900;
-EtherMain.minimumHeight     = 520;
+EtherMain.defaultWidth      = 1040; -- Стандартная ширина окна
+EtherMain.defaultHeight     = 600; -- Стандартная высота окна
+EtherMain.minimumWidth      = 960;
+EtherMain.minimumHeight     = 540;
 EtherMain.persistedWidth    = EtherMain.defaultWidth;
 EtherMain.persistedHeight   = EtherMain.defaultHeight;
 EtherMain.currentTabID      = 1; -- Последняя открытая вкладка
@@ -66,6 +66,9 @@ function EtherMain:close()
 		EtherMain.persistedHeight = EtherMain.instance:getHeight();
 		EtherMain.defaultWidth = EtherMain.persistedWidth;
 		EtherMain.defaultHeight = EtherMain.persistedHeight;
+		if ISLayoutManager.OnPostSave ~= nil then
+			ISLayoutManager.OnPostSave();
+		end
 	end
 	EtherMain.instance:setVisible(false);
     EtherMain.instance:removeFromUIManager();

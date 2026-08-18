@@ -479,6 +479,18 @@ public class EtherLuaMethods {
    )
    public static void toggleNoRecoil(boolean var0) {
       EtherMain.getInstance().etherAPI.isNoRecoil = var0;
+      if (!var0) EtherMain.getInstance().etherAPI.resetWeaponsStats();
+   }
+
+   @LuaMethod(name = "isNoSpread", global = true)
+   public static boolean isNoSpread() {
+      return EtherMain.getInstance().etherAPI.isNoSpread;
+   }
+
+   @LuaMethod(name = "toggleNoSpread", global = true)
+   public static void toggleNoSpread(boolean enabled) {
+      EtherMain.getInstance().etherAPI.isNoSpread = enabled;
+      if (!enabled) EtherMain.getInstance().etherAPI.resetWeaponsStats();
    }
 
    @LuaMethod(name = "getItemGrantMode", global = true)
@@ -515,6 +527,16 @@ public class EtherLuaMethods {
    @LuaMethod(name = "setAutoAimTargetPart", global = true)
    public static void setAutoAimTargetPart(String targetPart) {
       EtherMain.getInstance().etherAPI.autoAim.setTargetPart(targetPart);
+   }
+
+   @LuaMethod(name = "getAutoAimMode", global = true)
+   public static String getAutoAimMode() {
+      return EtherMain.getInstance().etherAPI.autoAim.getMode();
+   }
+
+   @LuaMethod(name = "setAutoAimMode", global = true)
+   public static void setAutoAimMode(String mode) {
+      EtherMain.getInstance().etherAPI.autoAim.setMode(mode);
    }
 
    @LuaMethod(name = "isAutoAimShowTarget", global = true)

@@ -56,7 +56,8 @@ public final class MediaXpIntegrationTest {
                         && luaMethods.contains("MediaXpController.sendXpBroadcast("),
                 "The media XP controller must be exposed to Lua");
         require(!xpModal.contains("addXpFromNearbyBroadcast")
-                        && mediaModal.contains("addXpFromNearbyBroadcast(self.perk, amount)")
+                        && mediaModal.contains("addXpFromNearbyBroadcast(perk:getType(), amount)")
+                        && mediaModal.contains("selectedPerks")
                         && mediaModal.contains("getMediaXpFailureReason()")
                         && skills.contains("UIModalMediaXP:new(selectedItem.perk)"),
                 "Television XP must be a separate skill action and dialog");

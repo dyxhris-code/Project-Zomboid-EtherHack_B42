@@ -67,8 +67,13 @@ function UIButtonsPanel:layoutPanel(panel)
     if panel == nil then return end
     panel:setX(self.x + self.width)
     panel:setY(self.y)
-    panel:setWidth(self.parent.width - self.x - self.width)
-    panel:setHeight(self.parent.height - self.y)
+    local width = self.parent.width - self.x - self.width
+    local height = self.parent.height - self.y
+    panel:setWidth(width)
+    panel:setHeight(height)
+    if panel.onResize ~= nil then
+        panel:onResize(width, height)
+    end
 end
 
 function UIButtonsPanel:layoutPanels()

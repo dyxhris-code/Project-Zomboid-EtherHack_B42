@@ -95,24 +95,9 @@ function EtherCharacterPanel:createChildren()
     self:addCheckBox(getTranslate("UI_CharacterPanel_MultiHitZombies"), function(isChecked)
         toggleMultiHitZombies(isChecked);
     end, isMultiHitZombies(), false);
-    self:addCheckBox(getTranslate("UI_CharacterPanel_InstantKill"), function(isChecked)
-        toggleExtraDamage(isChecked);
-        if(not isChecked) then
-            resetWeaponsStats()
-        end
-    end, isExtraDamage(), false);
-
-    self:addCheckBox(getTranslate("UI_CharacterPanel_UnlimitedAmmo"), function(isChecked)
-        toggleUnlimitedAmmo(isChecked);
-    end, isUnlimitedAmmo(), false);
-
     self:addCheckBox(getTranslate("UI_CharacterPanel_UnlimitedCondition"), function(isChecked)
         toggleUnlimitedCondition(isChecked);
     end, isUnlimitedCondition(), false);
-
-    self:addCheckBox(getTranslate("UI_CharacterPanel_DisableRecoil"), function(isChecked)
-        toggleNoRecoil(isChecked)
-    end, isNoRecoil(), false);
 
     self:addSection(getTranslate("UI_CharacterSection_Inventory"));
     self:addCheckBox(getTranslate("UI_CharacterPanel_UnlimitedCarry"), function(isChecked)

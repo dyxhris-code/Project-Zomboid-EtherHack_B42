@@ -169,13 +169,20 @@ function UISkillTable:layoutChildren()
     if self.datas == nil then return end
     local gap = 6
     local count = #self.buttonList
-    local buttonWidth = math.floor((self.width - gap * (count - 1)) / count)
+    local columns = math.min(3, math.max(1, count))
+    local rows = math.ceil(count / columns)
+    local buttonHeight = 26
+    local footerHeight = rows * (buttonHeight + gap) + 10
+    local buttonWidth = math.floor((self.width - gap * (columns - 1)) / columns)
     self.datas:setWidth(self.width)
-    self.datas:setHeight(math.max(60, self.height - 90))
+    self.datas:setHeight(math.max(60, self.height - footerHeight))
     for index, button in ipairs(self.buttonList) do
-        button:setX((index - 1) * (buttonWidth + gap))
-        button:setY(self.height - 80)
+        local column = (index - 1) % columns
+        local row = math.floor((index - 1) / columns)
+        button:setX(column * (buttonWidth + gap))
+        button:setY(self.height - footerHeight + row * (buttonHeight + gap))
         button:setWidth(buttonWidth)
+        button:setHeight(buttonHeight)
     end
 end
 

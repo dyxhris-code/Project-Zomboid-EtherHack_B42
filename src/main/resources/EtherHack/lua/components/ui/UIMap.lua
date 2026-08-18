@@ -1,5 +1,13 @@
 UIMap = ISWorldMap:derive("UIMap")
 
+-- The default map API range is too narrow for the trainer's movable mini-map.
+UIMap.MIN_ZOOM = 6.0
+UIMap.MAX_ZOOM = 36.0
+
+function UIMap:clampZoom(zoom)
+    return math.max(UIMap.MIN_ZOOM, math.min(UIMap.MAX_ZOOM, zoom))
+end
+
 --*********************************************************
 --* Создание дочерних элементов
 --*********************************************************
@@ -25,7 +33,7 @@ function UIMap:restoreSettings()
 	end
 	
 	self.mapAPI:centerOn(centerX, centerY)
-	self.mapAPI:setZoom(zoom)
+	self.mapAPI:setZoom(self:clampZoom(zoom))
 	self.mapAPI:setBoolean("Isometric", isometric)
 end
 
@@ -217,7 +225,12 @@ end
 --* Движение колесика мыши
 --*********************************************************
 function UIMap:onMouseWheel(del)
-	self.mapAPI:zoomAt(self:getMouseX(), self:getMouseY(), del)
+	local currentZoom = self.mapAPI:getZoomF()
+	local targetZoom = self:clampZoom(currentZoom + del)
+	local delta = targetZoom - currentZoom
+	if math.abs(delta) > 0.001 then
+		self.mapAPI:zoomAt(self:getMouseX(), self:getMouseY(), delta)
+	end
 	return true
 end
 
